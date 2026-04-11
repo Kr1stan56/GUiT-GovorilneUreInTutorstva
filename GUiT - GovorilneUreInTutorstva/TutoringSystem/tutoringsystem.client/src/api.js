@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://localhost:7101/api/Tutoring';
+const API_BASE_URL = 'http://localhost:5236/api/Tutoring';
 
 export const api = {
     // Prijava
