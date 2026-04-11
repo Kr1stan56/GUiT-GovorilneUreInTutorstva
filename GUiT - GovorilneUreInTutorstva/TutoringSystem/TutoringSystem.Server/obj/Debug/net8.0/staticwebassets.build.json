@@ -1,23 +1,11 @@
 {
   "Version": 1,
-  "Hash": "M4P5Wxy77qi5R9oU0krhqj6vT8V31rffcRgO1lap5Uk=",
+  "Hash": "30yZuzBLHMrZjrqYD7jsToQuI8lDjrwAgOj0rE6yFt4=",
   "Source": "TutoringSystem.Server",
   "BasePath": "_content/TutoringSystem.Server",
   "Mode": "Default",
   "ManifestType": "Build",
-  "ReferencedProjectsConfiguration": [
-    {
-      "Identity": "C:\\Spletna rezervacija govorilnih ur in tutorstva\\GUiT-GovorilneUreInTutorstva\\GUiT - GovorilneUreInTutorstva\\TutoringSystem\\tutoringsystem.client\\tutoringsystem.client.esproj",
-      "Version": 2,
-      "Source": "tutoringsystem.client",
-      "GetPublishAssetsTargets": "GetCurrentProjectPublishStaticWebAssetItems",
-      "AdditionalPublishProperties": "",
-      "AdditionalPublishPropertiesToRemove": "WebPublishProfileFile;TargetFramework;RuntimeIdentifier;SelfContained",
-      "GetBuildAssetsTargets": "GetCurrentProjectBuildStaticWebAssetItems",
-      "AdditionalBuildProperties": "",
-      "AdditionalBuildPropertiesToRemove": "WebPublishProfileFile;TargetFramework;RuntimeIdentifier;SelfContained"
-    }
-  ],
+  "ReferencedProjectsConfiguration": [],
   "DiscoveryPatterns": [],
   "Assets": []
 }

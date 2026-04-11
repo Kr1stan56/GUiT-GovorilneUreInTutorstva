@@ -1,9 +1,8 @@
-using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
-namespace StudentskaSluzba.Models
+namespace TutoringSystem.Server.Models
 {
     [Table("govorilne_ure")]
     public class OfficeHour
@@ -27,17 +26,15 @@ namespace StudentskaSluzba.Models
         [Column("predmet_id")]
         public int? PredmetId { get; set; }
 
-        // Navigacijske lastnosti
         [ForeignKey("UserId")]
-        public virtual User Uporabnik { get; set; }
+        public virtual User? Uporabnik { get; set; }
 
         [ForeignKey("PredmetId")]
-        public virtual Subject Predmet { get; set; }
+        public virtual Subject? Predmet { get; set; }
 
         [JsonIgnore]
-        public virtual ICollection<Reservation> Rezervacije { get; set; }
+        public virtual ICollection<Reservation> Rezervacije { get; set; } = new List<Reservation>();
 
-        // Propertyji za pomoè
         [NotMapped]
         public bool IsActive => Konec == null || Konec > DateTime.Now;
 
@@ -63,14 +60,12 @@ namespace StudentskaSluzba.Models
         [Column("govorilna_ura_id")]
         public int OfficeHourId { get; set; }
 
-        // Navigacijske lastnosti
         [ForeignKey("UserId")]
-        public virtual User Uporabnik { get; set; }
+        public virtual User? Uporabnik { get; set; }
 
         [ForeignKey("OfficeHourId")]
-        public virtual OfficeHour GovorilnaUra { get; set; }
+        public virtual OfficeHour? GovorilnaUra { get; set; }
 
-        // Property za status kot string
         [NotMapped]
         public string StatusOpis
         {

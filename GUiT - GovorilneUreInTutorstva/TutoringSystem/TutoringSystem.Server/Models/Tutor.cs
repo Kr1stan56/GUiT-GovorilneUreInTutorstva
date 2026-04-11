@@ -1,9 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
-using TutoringSystem.Server.Models;
 
-namespace StudentskaSluzba.Models
+namespace TutoringSystem.Server.Models
 {
     [Table("tutor_predmeti")]
     public class Tutor
@@ -20,12 +19,11 @@ namespace StudentskaSluzba.Models
         [Column("Uporabniki_id")]
         public int UserId { get; set; }
 
-        // Navigacijske lastnosti
         [ForeignKey("PredmetId")]
-        public virtual Subject Predmet { get; set; }
+        public virtual Subject? Predmet { get; set; }
 
         [ForeignKey("UserId")]
-        public virtual User Uporabnik { get; set; }
+        public virtual User? Uporabnik { get; set; }
     }
 
     [Table("predmeti")]
@@ -36,14 +34,14 @@ namespace StudentskaSluzba.Models
         public int Id { get; set; }
 
         [Required]
-        public string Naziv { get; set; }
+        public string Naziv { get; set; } = string.Empty;
 
-        public string Opis { get; set; }
-
-        [JsonIgnore]
-        public virtual ICollection<Tutor> Tutorji { get; set; }
+        public string Opis { get; set; } = string.Empty;
 
         [JsonIgnore]
-        public virtual ICollection<OfficeHour> GovorilneUre { get; set; }
+        public virtual ICollection<Tutor> Tutorji { get; set; } = new List<Tutor>();
+
+        [JsonIgnore]
+        public virtual ICollection<OfficeHour> GovorilneUre { get; set; } = new List<OfficeHour>();
     }
 }
