@@ -419,7 +419,98 @@ namespace StudentskaSluzba.Controllers
 
             return Ok(stats);
         }
+        // ========== PRIMER UPORABE STORED PROCEDURE ==========
+        [HttpGet("stats-sp")]
+        public async Task<IActionResult> GetStatsFromSP()
+        {
+            var stats = new List<dynamic>();
 
+            using (var command = _context.Database.GetDbConnection().CreateCommand())
+            {
+                command.CommandText = "SELECT * FROM sp_get_dashboard_stats()";
+                command.CommandType = System.Data.CommandType.Text;
+
+                await _context.Database.OpenConnectionAsync();
+
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        stats.Add(new { name = reader[0].ToString(), value = Convert.ToInt64(reader[1]) });
+                    }
+                }
+            }
+
+            return Ok(stats);
+        }
+        // ========== MOJE PRIJAVE ==========
+        [HttpGet("my-enrollments/{userId}")]
+        public async Task<IActionResult> GetMyEnrollments(int userId)
+        {
+            var reservations = await _context.Reservations
+                .Include(r => r.GovorilnaUra)
+                    .ThenInclude(g => g.Uporabnik)
+                .Include(r => r.GovorilnaUra)
+                    .ThenInclude(g => g.Predmet)
+                .Where(r => r.UserId == userId && r.Status != 2)
+                .ToListAsync();
+
+            var officeHours = reservations.Select(r => r.GovorilnaUra).ToList();
+            return Ok(officeHours);
+        }
+
+        // ========== PRIJAVA NA GOVORILNO URO (enroll) ==========
+        [HttpPost("officehours/{id}/enroll")]
+        public async Task<IActionResult> EnrollStudent(int id, [FromBody] int studentId)
+        {
+            var officeHour = await _context.OfficeHours
+                .Include(o => o.Rezervacije)
+                .FirstOrDefaultAsync(o => o.Id == id);
+
+            if (officeHour == null)
+                return NotFound(new { message = "Govorilna ura ne obstaja" });
+
+            // Preveri ali je že prijavljen
+            if (officeHour.Rezervacije != null && officeHour.Rezervacije.Any(r => r.UserId == studentId && r.Status != 2))
+                return BadRequest(new { message = "Že ste prijavljeni na to govorilno uro" });
+
+            // Preveri število mest (max 10)
+            var confirmedCount = officeHour.Rezervacije?.Count(r => r.Status == 1) ?? 0;
+            if (confirmedCount >= 10)
+                return BadRequest(new { message = "Ni veè prostih mest" });
+
+            var reservation = new Reservation
+            {
+                UserId = studentId,
+                OfficeHourId = id,
+                Status = 1 // Potrjeno
+            };
+
+            _context.Reservations.Add(reservation);
+            await _context.SaveChangesAsync();
+
+            var updated = await _context.OfficeHours
+                .Include(o => o.Uporabnik)
+                .Include(o => o.Predmet)
+                .Include(o => o.Rezervacije)
+                .FirstOrDefaultAsync(o => o.Id == id);
+
+            return Ok(updated);
+        }
+
+        // ========== PRETEKLI TERMINI (ne prikazuj) ==========
+        [HttpGet("officehours/upcoming")]
+        public async Task<IActionResult> GetUpcomingOfficeHours()
+        {
+            var officeHours = await _context.OfficeHours
+                .Include(o => o.Uporabnik)
+                .Include(o => o.Predmet)
+                .Include(o => o.Rezervacije)
+                .Where(o => o.Zacetek > DateTime.Now)
+                .OrderBy(o => o.Zacetek)
+                .ToListAsync();
+            return Ok(officeHours);
+        }
         // ========== POMOŽNE FUNKCIJE ==========
         private string GetRoleName(int roleId)
         {
