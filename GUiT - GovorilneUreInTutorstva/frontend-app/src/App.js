@@ -1,198 +1,564 @@
-import { useState, useEffect } from 'react'
-
-const API = {
-    getOfficeHours: async () => {
-        return [
-            { id: 1, professorName: "Dr. Novak", subject: "Programiranje", dateTime: "2026-04-15T10:00", location: "Zoom", maxStudents: 5, enrolled: 2 },
-            { id: 2, professorName: "Dr. Horvat", subject: "Baze podatkov", dateTime: "2026-04-16T14:00", location: "R2-12", maxStudents: 3, enrolled: 1 },
-        ]
-    },
-    createOfficeHour: async (data) => {
-        return { id: Date.now(), ...data }
-    },
-    updateOfficeHour: async (id, data) => {
-        return data
-    },
-    deleteOfficeHour: async (id) => {
-        console.log("Deleted:", id)
-    },
-    getTutors: async () => {
-        return [
-            { id: 1, name: "Luka M.", subject: "Programiranje", description: "Pomoč pri Javi", price: 15, email: "luka@student.com" },
-            { id: 2, name: "Ana K.", subject: "Matematika", description: "Vsa poglavja", price: 12, email: "ana@student.com" },
-        ]
-    },
-    createTutor: async (data) => {
-        return { id: Date.now(), ...data }
-    },
-    updateTutor: async (id, data) => {
-        return data
-    },
-    deleteTutor: async (id) => {
-        console.log("Deleted tutor:", id)
-    }
-}
+import { useState, useEffect } from 'react';
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Container,
+  Grid,
+  Card,
+  CardContent,
+  CardActions,
+  Button,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Box,
+  Chip,
+  Avatar,
+  Menu,
+  MenuItem,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Rating,
+  Alert,
+  Snackbar,
+  CircularProgress
+} from '@mui/material';
+import {
+  School as SchoolIcon,
+  Person as PersonIcon,
+  EventNote as EventIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Dashboard as DashboardIcon,
+  Book as BookIcon,
+  Logout as LogoutIcon,
+  Add as AddIcon
+} from '@mui/icons-material';
+import { api } from './api';
 
 function App() {
-    const [tab, setTab] = useState('office')
-    const [officeHours, setOfficeHours] = useState([])
-    const [tutors, setTutors] = useState([])
-    const [showOfficeForm, setShowOfficeForm] = useState(false)
-    const [showTutorForm, setShowTutorForm] = useState(false)
-    const [editingOffice, setEditingOffice] = useState(null)
-    const [editingTutor, setEditingTutor] = useState(null)
-    const [officeForm, setOfficeForm] = useState({ professorName: '', subject: '', dateTime: '', location: '', maxStudents: 5, enrolled: 0 })
-    const [tutorForm, setTutorForm] = useState({ name: '', subject: '', description: '', price: 10, email: '' })
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [officeHours, setOfficeHours] = useState([]);
+  const [tutors, setTutors] = useState([]);
+  const [openOfficeDialog, setOpenOfficeDialog] = useState(false);
+  const [openTutorDialog, setOpenTutorDialog] = useState(false);
+  const [editingOffice, setEditingOffice] = useState(null);
+  const [editingTutor, setEditingTutor] = useState(null);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [anchorEl, setAnchorEl] = useState(null);
+  
+  // Form state
+  const [officeForm, setOfficeForm] = useState({
+    professorName: '',
+    professorId: 0,
+    subject: '',
+    dateTime: '',
+    location: '',
+    maxStudents: 5,
+    enrolled: 0,
+    students: []
+  });
+  
+  const [tutorForm, setTutorForm] = useState({
+    name: '',
+    studentId: 0,
+    subject: '',
+    description: '',
+    price: 15,
+    email: '',
+    rating: 0,
+    reviews: 0
+  });
 
-    useEffect(() => {
-        loadOfficeHours()
-        loadTutors()
-    }, [])
+  useEffect(() => {
+    loadInitialData();
+  }, []);
 
-    const loadOfficeHours = async () => {
-        const data = await API.getOfficeHours()
-        setOfficeHours(data)
+  const loadInitialData = async () => {
+    setLoading(true);
+    try {
+      // Za demo namene uporabimo mock prijavo
+      // Kasneje zamenjajte s pravim loginom
+      const mockUser = { id: 4, name: "Ana K.", role: "student", email: "ana@student.com" };
+      setUser(mockUser);
+      
+      const [officeData, tutorData] = await Promise.all([
+        api.getOfficeHours(),
+        api.getTutors()
+      ]);
+      setOfficeHours(officeData);
+      setTutors(tutorData);
+    } catch (error) {
+      console.error('Napaka pri nalaganju:', error);
+      showMessage('Napaka pri povezavi s strežnikom', 'error');
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const loadTutors = async () => {
-        const data = await API.getTutors()
-        setTutors(data)
+  const showMessage = (message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleEnroll = async (officeId) => {
+    if (user.role !== 'student') return;
+    
+    try {
+      const updated = await api.enrollStudent(officeId, user.id);
+      setOfficeHours(officeHours.map(oh => oh.id === officeId ? updated : oh));
+      showMessage('Uspešno ste se prijavili na govorilno uro!');
+    } catch (error) {
+      showMessage('Napaka pri prijavi', 'error');
     }
+  };
 
-    const handleOfficeSubmit = async (e) => {
-        e.preventDefault()
-        if (editingOffice) {
-            const updated = await API.updateOfficeHour(editingOffice.id, { ...officeForm, id: editingOffice.id })
-            setOfficeHours(officeHours.map(o => o.id === editingOffice.id ? updated : o))
-            setEditingOffice(null)
-        } else {
-            const newOffice = await API.createOfficeHour(officeForm)
-            setOfficeHours([...officeHours, newOffice])
-        }
-        setOfficeForm({ professorName: '', subject: '', dateTime: '', location: '', maxStudents: 5, enrolled: 0 })
-        setShowOfficeForm(false)
+  const handleCancelEnrollment = async (officeId) => {
+    try {
+      const updated = await api.cancelEnrollment(officeId, user.id);
+      setOfficeHours(officeHours.map(oh => oh.id === officeId ? updated : oh));
+      showMessage('Prijava je bila preklicana.');
+    } catch (error) {
+      showMessage('Napaka pri preklicu', 'error');
     }
+  };
 
-    const handleDeleteOffice = async (id) => {
-        if (window.confirm('Izbriši govorilno uro?')) {
-            await API.deleteOfficeHour(id)
-            setOfficeHours(officeHours.filter(o => o.id !== id))
-        }
+  const handleDeleteOffice = async (id) => {
+    try {
+      await api.deleteOfficeHour(id);
+      setOfficeHours(officeHours.filter(oh => oh.id !== id));
+      showMessage('Govorilna ura je izbrisana.');
+    } catch (error) {
+      showMessage('Napaka pri brisanju', 'error');
     }
+  };
 
-    const handleTutorSubmit = async (e) => {
-        e.preventDefault()
-        if (editingTutor) {
-            const updated = await API.updateTutor(editingTutor.id, { ...tutorForm, id: editingTutor.id })
-            setTutors(tutors.map(t => t.id === editingTutor.id ? updated : t))
-            setEditingTutor(null)
-        } else {
-            const newTutor = await API.createTutor(tutorForm)
-            setTutors([...tutors, newTutor])
-        }
-        setTutorForm({ name: '', subject: '', description: '', price: 10, email: '' })
-        setShowTutorForm(false)
+  const handleCreateOffice = async () => {
+    try {
+      const newOffice = await api.createOfficeHour({
+        ...officeForm,
+        professorId: user.id,
+        professorName: user.name,
+        enrolled: 0,
+        students: []
+      });
+      setOfficeHours([...officeHours, newOffice]);
+      setOpenOfficeDialog(false);
+      setOfficeForm({
+        professorName: '',
+        professorId: 0,
+        subject: '',
+        dateTime: '',
+        location: '',
+        maxStudents: 5,
+        enrolled: 0,
+        students: []
+      });
+      showMessage('Govorilna ura je dodana!');
+    } catch (error) {
+      showMessage('Napaka pri dodajanju', 'error');
     }
+  };
 
-    const handleDeleteTutor = async (id) => {
-        if (window.confirm('Izbriši tutorja?')) {
-            await API.deleteTutor(id)
-            setTutors(tutors.filter(t => t.id !== id))
-        }
+  const handleUpdateOffice = async () => {
+    try {
+      const updated = await api.updateOfficeHour(editingOffice.id, officeForm);
+      setOfficeHours(officeHours.map(oh => oh.id === editingOffice.id ? updated : oh));
+      setOpenOfficeDialog(false);
+      setEditingOffice(null);
+      showMessage('Govorilna ura je posodobljena!');
+    } catch (error) {
+      showMessage('Napaka pri posodabljanju', 'error');
     }
+  };
 
+  const handleUpdateTutor = async () => {
+    try {
+      const updated = await api.updateTutor(editingTutor.id, tutorForm);
+      setTutors(tutors.map(t => t.id === editingTutor.id ? updated : t));
+      setOpenTutorDialog(false);
+      setEditingTutor(null);
+      showMessage('Profil je posodobljen!');
+    } catch (error) {
+      showMessage('Napaka pri posodabljanju', 'error');
+    }
+  };
+
+  const isEnrolled = (officeId) => {
+    const office = officeHours.find(oh => oh.id === officeId);
+    return office?.students?.includes(user?.id);
+  };
+
+  // Admin view
+  const AdminDashboard = () => (
+    <Box>
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6">📊 Statistika</Typography>
+              <Typography>Št. govorilnih ur: {officeHours.length}</Typography>
+              <Typography>Št. tutorjev: {tutors.length}</Typography>
+              <Typography>Skupaj prijav: {officeHours.reduce((sum, oh) => sum + oh.enrolled, 0)}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6">👥 Uporabniki</Typography>
+              <Typography>Študentov: 45</Typography>
+              <Typography>Profesorjev: 8</Typography>
+              <Typography>Tutorjev: {tutors.length}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+      <Box sx={{ mt: 3 }}>
+        <Typography variant="h5" gutterBottom>Vse govorilne ure</Typography>
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Predmet</TableCell>
+                <TableCell>Profesor</TableCell>
+                <TableCell>Datum</TableCell>
+                <TableCell>Prijavljeni</TableCell>
+                <TableCell>Akcije</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {officeHours.map(oh => (
+                <TableRow key={oh.id}>
+                  <TableCell>{oh.subject}</TableCell>
+                  <TableCell>{oh.professorName}</TableCell>
+                  <TableCell>{new Date(oh.dateTime).toLocaleString()}</TableCell>
+                  <TableCell>{oh.enrolled}/{oh.maxStudents}</TableCell>
+                  <TableCell>
+                    <IconButton color="error" onClick={() => handleDeleteOffice(oh.id)}>
+                      <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
+    </Box>
+  );
+
+  // Professor view
+  const ProfessorDashboard = () => (
+    <Box>
+      <Button
+        variant="contained"
+        startIcon={<AddIcon />}
+        onClick={() => { setEditingOffice(null); setOpenOfficeDialog(true); }}
+        sx={{ mb: 3 }}
+      >
+        Dodaj govorilno uro
+      </Button>
+      <Grid container spacing={3}>
+        {officeHours.filter(oh => oh.professorId === user.id).map(oh => (
+          <Grid item xs={12} md={6} key={oh.id}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6">{oh.subject}</Typography>
+                <Chip label={oh.location} size="small" sx={{ mb: 1 }} />
+                <Typography>📅 {new Date(oh.dateTime).toLocaleString()}</Typography>
+                <Typography>👥 Prijavljeni: {oh.enrolled}/{oh.maxStudents}</Typography>
+                <Box sx={{ mt: 1 }}>
+                  <Typography variant="body2" color="textSecondary">
+                    Prijavljeni študenti: {oh.students?.length || 0}
+                  </Typography>
+                </Box>
+              </CardContent>
+              <CardActions>
+                <Button size="small" startIcon={<EditIcon />} onClick={() => { 
+                  setEditingOffice(oh); 
+                  setOfficeForm(oh);
+                  setOpenOfficeDialog(true); 
+                }}>
+                  Uredi
+                </Button>
+                <Button size="small" color="error" startIcon={<DeleteIcon />} onClick={() => handleDeleteOffice(oh.id)}>
+                  Izbriši
+                </Button>
+              </CardActions>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+    </Box>
+  );
+
+  // Tutor view
+  const TutorDashboard = () => {
+    const myTutorProfile = tutors.find(t => t.studentId === user.id);
     return (
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: 20, fontFamily: 'Arial' }}>
-            <h1 style={{ textAlign: 'center', color: '#2c3e50' }}>📚 Rezervacija govorilnih ur in tutorstvo</h1>
+      <Box>
+        <Card sx={{ mb: 3, bgcolor: '#e3f2fd' }}>
+          <CardContent>
+            <Typography variant="h5">👋 Pozdravljen, {user.name}!</Typography>
+            <Typography>Vaša urna postavka: {myTutorProfile?.price || 15}€/uro</Typography>
+            <Rating value={myTutorProfile?.rating || 0} readOnly precision={0.5} />
+          </CardContent>
+        </Card>
+        <Button variant="contained" startIcon={<EditIcon />} onClick={() => {
+          if (myTutorProfile) {
+            setEditingTutor(myTutorProfile);
+            setTutorForm(myTutorProfile);
+            setOpenTutorDialog(true);
+          }
+        }} sx={{ mb: 3 }}>
+          Uredi svoj profil
+        </Button>
+        <Typography variant="h5" gutterBottom>📚 Moje tutorstvo</Typography>
+        <Grid container spacing={3}>
+          {tutors.filter(t => t.studentId === user.id).map(tutor => (
+            <Grid item xs={12} key={tutor.id}>
+              <Card>
+                <CardContent>
+                  <Typography variant="h6">{tutor.subject}</Typography>
+                  <Typography>{tutor.description}</Typography>
+                  <Typography variant="h6" color="primary">💰 {tutor.price}€/uro</Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+    );
+  };
 
-            <div style={{ display: 'flex', gap: 10, marginBottom: 30, justifyContent: 'center' }}>
-                <button onClick={() => setTab('office')} style={{ padding: '10px 20px', background: tab === 'office' ? '#3498db' : '#ecf0f1', color: tab === 'office' ? 'white' : '#2c3e50', border: 'none', borderRadius: 8, cursor: 'pointer' }}>🎓 Govorilne ure</button>
-                <button onClick={() => setTab('tutor')} style={{ padding: '10px 20px', background: tab === 'tutor' ? '#3498db' : '#ecf0f1', color: tab === 'tutor' ? 'white' : '#2c3e50', border: 'none', borderRadius: 8, cursor: 'pointer' }}>👨‍🏫 Tutorji</button>
-            </div>
+  // Student view
+  const StudentDashboard = () => (
+    <Box>
+      <Typography variant="h5" gutterBottom>🎓 Moje prijave</Typography>
+      <Grid container spacing={2} sx={{ mb: 4 }}>
+        {officeHours.filter(oh => oh.students?.includes(user.id)).map(oh => (
+          <Grid item xs={12} md={6} key={oh.id}>
+            <Card sx={{ bgcolor: '#e8f5e9' }}>
+              <CardContent>
+                <Typography variant="h6">{oh.subject}</Typography>
+                <Typography>👨‍🏫 {oh.professorName}</Typography>
+                <Typography>📅 {new Date(oh.dateTime).toLocaleString()}</Typography>
+                <Typography>📍 {oh.location}</Typography>
+              </CardContent>
+              <CardActions>
+                <Button size="small" color="error" onClick={() => handleCancelEnrollment(oh.id)}>
+                  Prekliči prijavo
+                </Button>
+              </CardActions>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
 
-            {tab === 'office' && (
-                <div>
-                    <button onClick={() => setShowOfficeForm(true)} style={{ background: '#27ae60', color: 'white', padding: '10px 20px', border: 'none', borderRadius: 8, cursor: 'pointer', marginBottom: 20 }}>+ Nova govorilna ura</button>
+      <Typography variant="h5" gutterBottom>📖 Razpoložljive govorilne ure</Typography>
+      <Grid container spacing={3}>
+        {officeHours.filter(oh => !oh.students?.includes(user.id) && oh.enrolled < oh.maxStudents).map(oh => (
+          <Grid item xs={12} md={4} key={oh.id}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6">{oh.subject}</Typography>
+                <Typography color="textSecondary">{oh.professorName}</Typography>
+                <Typography>📅 {new Date(oh.dateTime).toLocaleString()}</Typography>
+                <Typography>📍 {oh.location}</Typography>
+                <Chip label={`Prostih: ${oh.maxStudents - oh.enrolled}`} color="success" size="small" sx={{ mt: 1 }} />
+              </CardContent>
+              <CardActions>
+                <Button variant="contained" fullWidth onClick={() => handleEnroll(oh.id)}>
+                  Prijavi se
+                </Button>
+              </CardActions>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
 
-                    {showOfficeForm && (
-                        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <div style={{ background: 'white', padding: 30, borderRadius: 12, width: 450 }}>
-                                <h2>{editingOffice ? 'Uredi' : 'Dodaj'} govorilno uro</h2>
-                                <form onSubmit={handleOfficeSubmit}>
-                                    <input style={{ width: '100%', padding: 10, marginBottom: 10, border: '1px solid #ddd', borderRadius: 5 }} placeholder="Ime profesorja" value={officeForm.professorName} onChange={e => setOfficeForm({...officeForm, professorName: e.target.value})} required />
-                                    <input style={{ width: '100%', padding: 10, marginBottom: 10, border: '1px solid #ddd', borderRadius: 5 }} placeholder="Predmet" value={officeForm.subject} onChange={e => setOfficeForm({...officeForm, subject: e.target.value})} required />
-                                    <input style={{ width: '100%', padding: 10, marginBottom: 10, border: '1px solid #ddd', borderRadius: 5 }} type="datetime-local" value={officeForm.dateTime} onChange={e => setOfficeForm({...officeForm, dateTime: e.target.value})} required />
-                                    <input style={{ width: '100%', padding: 10, marginBottom: 10, border: '1px solid #ddd', borderRadius: 5 }} placeholder="Lokacija" value={officeForm.location} onChange={e => setOfficeForm({...officeForm, location: e.target.value})} required />
-                                    <input style={{ width: '100%', padding: 10, marginBottom: 10, border: '1px solid #ddd', borderRadius: 5 }} type="number" placeholder="Max študentov" value={officeForm.maxStudents} onChange={e => setOfficeForm({...officeForm, maxStudents: parseInt(e.target.value)})} required />
-                                    <div style={{ display: 'flex', gap: 10 }}>
-                                        <button type="submit" style={{ background: '#27ae60', color: 'white', padding: '10px 20px', border: 'none', borderRadius: 5, cursor: 'pointer' }}>Shrani</button>
-                                        <button type="button" style={{ background: '#95a5a6', color: 'white', padding: '10px 20px', border: 'none', borderRadius: 5, cursor: 'pointer' }} onClick={() => { setShowOfficeForm(false); setEditingOffice(null); }}>Prekliči</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    )}
+      <Typography variant="h5" gutterBottom sx={{ mt: 4 }}>👨‍🏫 Razpoložljivi tutorji</Typography>
+      <Grid container spacing={3}>
+        {tutors.map(tutor => (
+          <Grid item xs={12} md={4} key={tutor.id}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6">{tutor.name}</Typography>
+                <Chip label={tutor.subject} size="small" color="primary" sx={{ mb: 1 }} />
+                <Typography variant="body2">{tutor.description}</Typography>
+                <Typography variant="h6" color="primary">💰 {tutor.price}€/uro</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                  <Rating value={tutor.rating} readOnly precision={0.5} size="small" />
+                  <Typography variant="body2" sx={{ ml: 1 }}>({tutor.reviews})</Typography>
+                </Box>
+              </CardContent>
+              <CardActions>
+                <Button fullWidth variant="outlined" href={`mailto:${tutor.email}`}>
+                  Kontaktiraj
+                </Button>
+              </CardActions>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+    </Box>
+  );
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 }}>
-                        {officeHours.map(oh => (
-                            <div key={oh.id} style={{ border: '1px solid #e0e0e0', borderRadius: 12, padding: 18, background: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-                                <h3 style={{ margin: '0 0 10px 0', color: '#2c3e50' }}>{oh.subject}</h3>
-                                <p><strong>👨‍🏫 Profesor:</strong> {oh.professorName}</p>
-                                <p><strong>📅 Datum/čas:</strong> {oh.dateTime}</p>
-                                <p><strong>📍 Lokacija:</strong> {oh.location}</p>
-                                <p><strong>👥 Prijavljeni:</strong> {oh.enrolled} / {oh.maxStudents}</p>
-                                <div style={{ display: 'flex', gap: 8, marginTop: 15 }}>
-                                    <button style={{ padding: '6px 12px', background: '#f39c12', color: 'white', border: 'none', borderRadius: 5, cursor: 'pointer' }} onClick={() => { setEditingOffice(oh); setOfficeForm(oh); setShowOfficeForm(true); }}>Uredi</button>
-                                    <button style={{ padding: '6px 12px', background: '#e74c3c', color: 'white', border: 'none', borderRadius: 5, cursor: 'pointer' }} onClick={() => handleDeleteOffice(oh.id)}>Izbriši</button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
+  const renderDashboard = () => {
+    switch (user?.role) {
+      case 'admin': return <AdminDashboard />;
+      case 'professor': return <ProfessorDashboard />;
+      case 'tutor': return <TutorDashboard />;
+      case 'student': return <StudentDashboard />;
+      default: return <StudentDashboard />;
+    }
+  };
 
-            {tab === 'tutor' && (
-                <div>
-                    <button onClick={() => setShowTutorForm(true)} style={{ background: '#27ae60', color: 'white', padding: '10px 20px', border: 'none', borderRadius: 8, cursor: 'pointer', marginBottom: 20 }}>+ Nov tutor</button>
+  const getRoleIcon = () => {
+    switch (user?.role) {
+      case 'admin': return <DashboardIcon />;
+      case 'professor': return <SchoolIcon />;
+      case 'tutor': return <PersonIcon />;
+      case 'student': return <BookIcon />;
+      default: return <PersonIcon />;
+    }
+  };
 
-                    {showTutorForm && (
-                        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <div style={{ background: 'white', padding: 30, borderRadius: 12, width: 450 }}>
-                                <h2>{editingTutor ? 'Uredi' : 'Dodaj'} tutorja</h2>
-                                <form onSubmit={handleTutorSubmit}>
-                                    <input style={{ width: '100%', padding: 10, marginBottom: 10, border: '1px solid #ddd', borderRadius: 5 }} placeholder="Ime" value={tutorForm.name} onChange={e => setTutorForm({...tutorForm, name: e.target.value})} required />
-                                    <input style={{ width: '100%', padding: 10, marginBottom: 10, border: '1px solid #ddd', borderRadius: 5 }} placeholder="Email" value={tutorForm.email} onChange={e => setTutorForm({...tutorForm, email: e.target.value})} required />
-                                    <input style={{ width: '100%', padding: 10, marginBottom: 10, border: '1px solid #ddd', borderRadius: 5 }} placeholder="Predmet" value={tutorForm.subject} onChange={e => setTutorForm({...tutorForm, subject: e.target.value})} required />
-                                    <textarea style={{ width: '100%', padding: 10, marginBottom: 10, border: '1px solid #ddd', borderRadius: 5, minHeight: 80 }} placeholder="Opis" value={tutorForm.description} onChange={e => setTutorForm({...tutorForm, description: e.target.value})} />
-                                    <input style={{ width: '100%', padding: 10, marginBottom: 10, border: '1px solid #ddd', borderRadius: 5 }} type="number" placeholder="Cena/uro (€)" value={tutorForm.price} onChange={e => setTutorForm({...tutorForm, price: parseInt(e.target.value)})} required />
-                                    <div style={{ display: 'flex', gap: 10 }}>
-                                        <button type="submit" style={{ background: '#27ae60', color: 'white', padding: '10px 20px', border: 'none', borderRadius: 5, cursor: 'pointer' }}>Shrani</button>
-                                        <button type="button" style={{ background: '#95a5a6', color: 'white', padding: '10px 20px', border: 'none', borderRadius: 5, cursor: 'pointer' }} onClick={() => { setShowTutorForm(false); setEditingTutor(null); }}>Prekliči</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    )}
+  const getRoleColor = () => {
+    switch (user?.role) {
+      case 'admin': return '#f44336';
+      case 'professor': return '#2196f3';
+      case 'tutor': return '#4caf50';
+      case 'student': return '#ff9800';
+      default: return '#9e9e9e';
+    }
+  };
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 }}>
-                        {tutors.map(tutor => (
-                            <div key={tutor.id} style={{ border: '1px solid #e0e0e0', borderRadius: 12, padding: 18, background: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-                                <h3 style={{ margin: '0 0 5px 0', color: '#2c3e50' }}>{tutor.name}</h3>
-                                <p style={{ color: '#7f8c8d', marginBottom: 10 }}>{tutor.email}</p>
-                                <p><strong>📚 Predmet:</strong> {tutor.subject}</p>
-                                <p><strong>📝 Opis:</strong> {tutor.description}</p>
-                                <p><strong>💰 Cena:</strong> {tutor.price} €/uro</p>
-                                <div style={{ display: 'flex', gap: 8, marginTop: 15 }}>
-                                    <button style={{ padding: '6px 12px', background: '#f39c12', color: 'white', border: 'none', borderRadius: 5, cursor: 'pointer' }} onClick={() => { setEditingTutor(tutor); setTutorForm(tutor); setShowTutorForm(true); }}>Uredi</button>
-                                    <button style={{ padding: '6px 12px', background: '#e74c3c', color: 'white', border: 'none', borderRadius: 5, cursor: 'pointer' }} onClick={() => handleDeleteTutor(tutor.id)}>Izbriši</button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-        </div>
-    )
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!user) {
+    return <Typography>Loading...</Typography>;
+  }
+
+  return (
+    <Box sx={{ flexGrow: 1 }}>
+      <AppBar position="static" sx={{ bgcolor: getRoleColor() }}>
+        <Toolbar>
+          <EventIcon sx={{ mr: 2 }} />
+          <Typography variant="h6" sx={{ flexGrow: 1 }}>
+            📚 TutorHub - Sistem za govorilne ure in tutorstvo
+          </Typography>
+          <Chip
+            avatar={<Avatar>{getRoleIcon()}</Avatar>}
+            label={`${user.name} (${user.role})`}
+            onClick={(e) => setAnchorEl(e.currentTarget)}
+            sx={{ bgcolor: 'white', color: getRoleColor() }}
+          />
+          <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
+            <MenuItem>{user.email}</MenuItem>
+            <MenuItem onClick={() => showMessage('Odjava funkcionalnost bo dodana')}>
+              <LogoutIcon sx={{ mr: 1 }} /> Odjava
+            </MenuItem>
+          </Menu>
+        </Toolbar>
+      </AppBar>
+
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+        {renderDashboard()}
+      </Container>
+
+      {/* Dialog za dodajanje/urejanje govorilnih ur */}
+      <Dialog open={openOfficeDialog} onClose={() => setOpenOfficeDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>{editingOffice ? 'Uredi govorilno uro' : 'Dodaj govorilno uro'}</DialogTitle>
+        <DialogContent>
+          <TextField 
+            fullWidth 
+            label="Predmet" 
+            margin="normal" 
+            value={officeForm.subject}
+            onChange={(e) => setOfficeForm({...officeForm, subject: e.target.value})}
+          />
+          <TextField 
+            fullWidth 
+            label="Lokacija" 
+            margin="normal"
+            value={officeForm.location}
+            onChange={(e) => setOfficeForm({...officeForm, location: e.target.value})}
+          />
+          <TextField 
+            fullWidth 
+            type="datetime-local" 
+            label="Datum in čas" 
+            margin="normal" 
+            InputLabelProps={{ shrink: true }}
+            value={officeForm.dateTime}
+            onChange={(e) => setOfficeForm({...officeForm, dateTime: e.target.value})}
+          />
+          <TextField 
+            fullWidth 
+            type="number" 
+            label="Max študentov" 
+            margin="normal"
+            value={officeForm.maxStudents}
+            onChange={(e) => setOfficeForm({...officeForm, maxStudents: parseInt(e.target.value)})}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenOfficeDialog(false)}>Prekliči</Button>
+          <Button variant="contained" onClick={editingOffice ? handleUpdateOffice : handleCreateOffice}>
+            Shrani
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialog za urejanje tutorski profila */}
+      <Dialog open={openTutorDialog} onClose={() => setOpenTutorDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Uredi tutorski profil</DialogTitle>
+        <DialogContent>
+          <TextField 
+            fullWidth 
+            label="Opis" 
+            multiline 
+            rows={3} 
+            margin="normal"
+            value={tutorForm.description}
+            onChange={(e) => setTutorForm({...tutorForm, description: e.target.value})}
+          />
+          <TextField 
+            fullWidth 
+            type="number" 
+            label="Cena (€/uro)" 
+            margin="normal"
+            value={tutorForm.price}
+            onChange={(e) => setTutorForm({...tutorForm, price: parseFloat(e.target.value)})}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenTutorDialog(false)}>Prekliči</Button>
+          <Button variant="contained" onClick={handleUpdateTutor}>Shrani</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+        <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
+      </Snackbar>
+    </Box>
+  );
 }
 
-export default App
+export default App;
