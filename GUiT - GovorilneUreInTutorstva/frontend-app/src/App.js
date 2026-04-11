@@ -19,7 +19,6 @@ import {
   Avatar,
   Menu,
   MenuItem,
-  Paper,
   Table,
   TableBody,
   TableCell,
@@ -30,7 +29,8 @@ import {
   Alert,
   Snackbar,
   CircularProgress,
-  IconButton
+  Paper,
+IconButton
 } from '@mui/material';
 import {
   School as SchoolIcon,
@@ -41,68 +41,181 @@ import {
   Dashboard as DashboardIcon,
   Book as BookIcon,
   Logout as LogoutIcon,
-  Add as AddIcon
+  Add as AddIcon,
+  Login as LoginIcon
 } from '@mui/icons-material';
-import { api } from './api';
+
+// API BASE URL - prilagodi glede na tvoj backend
+const API_BASE_URL = 'https://localhost:7101'; // ali http://localhost:5236
 
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [officeHours, setOfficeHours] = useState([]);
   const [tutors, setTutors] = useState([]);
+  const [subjects, setSubjects] = useState([]);
   const [openOfficeDialog, setOpenOfficeDialog] = useState(false);
   const [openTutorDialog, setOpenTutorDialog] = useState(false);
+  const [openLoginDialog, setOpenLoginDialog] = useState(true);
   const [editingOffice, setEditingOffice] = useState(null);
-  const [editingTutor, setEditingTutor] = useState(null);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [anchorEl, setAnchorEl] = useState(null);
-  
-  // Form state
-  const [officeForm, setOfficeForm] = useState({
-    professorName: '',
-    professorId: 0,
-    subject: '',
-    dateTime: '',
-    location: '',
-    maxStudents: 5,
-    enrolled: 0,
-    students: []
+  const [newOfficeHour, setNewOfficeHour] = useState({
+    zacetek: '',
+    konec: '',
+    učilnica: '',
+    predmetId: ''
   });
-  
-  const [tutorForm, setTutorForm] = useState({
-    name: '',
-    studentId: 0,
-    subject: '',
-    description: '',
-    price: 15,
-    email: '',
-    rating: 0,
-    reviews: 0
-  });
+
+  // API klici
+  const api = {
+    login: async (email, password) => {
+      const response = await fetch(`${API_BASE_URL}/api/Tutoring/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      if (!response.ok) throw new Error('Prijava ni uspela');
+      return response.json();
+    },
+
+    getOfficeHours: async () => {
+      const response = await fetch(`${API_BASE_URL}/api/Tutoring/officehours`);
+      if (!response.ok) throw new Error('Napaka pri nalaganju govorilnih ur');
+      return response.json();
+    },
+
+    createOfficeHour: async (officeHour) => {
+      const response = await fetch(`${API_BASE_URL}/api/Tutoring/officehours`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(officeHour)
+      });
+      if (!response.ok) throw new Error('Napaka pri ustvarjanju');
+      return response.json();
+    },
+
+    updateOfficeHour: async (id, officeHour) => {
+      const response = await fetch(`${API_BASE_URL}/api/Tutoring/officehours/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(officeHour)
+      });
+      if (!response.ok) throw new Error('Napaka pri posodabljanju');
+      return response.json();
+    },
+
+    deleteOfficeHour: async (id) => {
+      const response = await fetch(`${API_BASE_URL}/api/Tutoring/officehours/${id}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) throw new Error('Napaka pri brisanju');
+    },
+
+    getTutors: async () => {
+      const response = await fetch(`${API_BASE_URL}/api/Tutoring/tutors`);
+      if (!response.ok) throw new Error('Napaka pri nalaganju tutorjev');
+      return response.json();
+    },
+
+    getSubjects: async () => {
+      const response = await fetch(`${API_BASE_URL}/api/Tutoring/subjects`);
+      if (!response.ok) throw new Error('Napaka pri nalaganju predmetov');
+      return response.json();
+    }
+  };
 
   useEffect(() => {
-    loadInitialData();
+    // Preveri če je uporabnik že prijavljen (localStorage)
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+      loadData();
+    } else {
+      setLoading(false);
+      setOpenLoginDialog(true);
+    }
   }, []);
 
-  const loadInitialData = async () => {
-    setLoading(true);
+  const loadData = async () => {
     try {
-      // Za demo namene uporabimo mock prijavo
-      // Kasneje zamenjajte s pravim loginom
-      const mockUser = { id: 4, name: "Ana K.", role: "student", email: "ana@student.com" };
-      setUser(mockUser);
-      
-      const [officeData, tutorData] = await Promise.all([
+      const [officeData, tutorData, subjectData] = await Promise.all([
         api.getOfficeHours(),
-        api.getTutors()
+        api.getTutors(),
+        api.getSubjects()
       ]);
       setOfficeHours(officeData);
       setTutors(tutorData);
+      setSubjects(subjectData);
     } catch (error) {
-      console.error('Napaka pri nalaganju:', error);
-      showMessage('Napaka pri povezavi s strežnikom', 'error');
+      showMessage(error.message, 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLogin = async () => {
+    try {
+      const userData = await api.login(loginEmail, loginPassword);
+      setUser(userData);
+      localStorage.setItem('user', JSON.stringify(userData));
+      setOpenLoginDialog(false);
+      await loadData();
+      showMessage(`Dobrodošli, ${userData.name}!`, 'success');
+    } catch (error) {
+      showMessage('Napačen email ali geslo', 'error');
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    setUser(null);
+    setOpenLoginDialog(true);
+    showMessage('Uspešno ste se odjavili', 'info');
+  };
+
+  const handleCreateOfficeHour = async () => {
+    try {
+      const newOffice = {
+        zacetek: newOfficeHour.zacetek,
+        konec: newOfficeHour.konec || null,
+        učilnica: parseInt(newOfficeHour.učilnica),
+        uporabnikId: user.id,
+        predmetId: newOfficeHour.predmetId ? parseInt(newOfficeHour.predmetId) : null
+      };
+      const created = await api.createOfficeHour(newOffice);
+      setOfficeHours([...officeHours, created]);
+      setOpenOfficeDialog(false);
+      setNewOfficeHour({ zacetek: '', konec: '', učilnica: '', predmetId: '' });
+      showMessage('Govorilna ura uspešno dodana!', 'success');
+    } catch (error) {
+      showMessage(error.message, 'error');
+    }
+  };
+
+  const handleUpdateOfficeHour = async () => {
+    try {
+      const updated = await api.updateOfficeHour(editingOffice.id, editingOffice);
+      setOfficeHours(officeHours.map(oh => oh.id === editingOffice.id ? updated : oh));
+      setOpenOfficeDialog(false);
+      setEditingOffice(null);
+      showMessage('Govorilna ura posodobljena!', 'success');
+    } catch (error) {
+      showMessage(error.message, 'error');
+    }
+  };
+
+  const handleDeleteOfficeHour = async (id) => {
+    if (window.confirm('Ali ste prepričani?')) {
+      try {
+        await api.deleteOfficeHour(id);
+        setOfficeHours(officeHours.filter(oh => oh.id !== id));
+        showMessage('Govorilna ura izbrisana!', 'success');
+      } catch (error) {
+        showMessage(error.message, 'error');
+      }
     }
   };
 
@@ -110,95 +223,22 @@ function App() {
     setSnackbar({ open: true, message, severity });
   };
 
-  const handleEnroll = async (officeId) => {
-    if (user.role !== 'student') return;
-    
-    try {
-      const updated = await api.enrollStudent(officeId, user.id);
-      setOfficeHours(officeHours.map(oh => oh.id === officeId ? updated : oh));
-      showMessage('Uspešno ste se prijavili na govorilno uro!');
-    } catch (error) {
-      showMessage('Napaka pri prijavi', 'error');
+  const getRoleLabel = (roleId) => {
+    const roles = { 1: 'admin', 2: 'tutor', 3: 'student', 4: 'professor' };
+    return roles[roleId] || 'student';
+  };
+
+  const getRoleColor = () => {
+    switch (getRoleLabel(user?.roleId)) {
+      case 'admin': return '#f44336';
+      case 'professor': return '#2196f3';
+      case 'tutor': return '#4caf50';
+      case 'student': return '#ff9800';
+      default: return '#9e9e9e';
     }
   };
 
-  const handleCancelEnrollment = async (officeId) => {
-    try {
-      const updated = await api.cancelEnrollment(officeId, user.id);
-      setOfficeHours(officeHours.map(oh => oh.id === officeId ? updated : oh));
-      showMessage('Prijava je bila preklicana.');
-    } catch (error) {
-      showMessage('Napaka pri preklicu', 'error');
-    }
-  };
-
-  const handleDeleteOffice = async (id) => {
-    try {
-      await api.deleteOfficeHour(id);
-      setOfficeHours(officeHours.filter(oh => oh.id !== id));
-      showMessage('Govorilna ura je izbrisana.');
-    } catch (error) {
-      showMessage('Napaka pri brisanju', 'error');
-    }
-  };
-
-  const handleCreateOffice = async () => {
-    try {
-      const newOffice = await api.createOfficeHour({
-        ...officeForm,
-        professorId: user.id,
-        professorName: user.name,
-        enrolled: 0,
-        students: []
-      });
-      setOfficeHours([...officeHours, newOffice]);
-      setOpenOfficeDialog(false);
-      setOfficeForm({
-        professorName: '',
-        professorId: 0,
-        subject: '',
-        dateTime: '',
-        location: '',
-        maxStudents: 5,
-        enrolled: 0,
-        students: []
-      });
-      showMessage('Govorilna ura je dodana!');
-    } catch (error) {
-      showMessage('Napaka pri dodajanju', 'error');
-    }
-  };
-
-  const handleUpdateOffice = async () => {
-    try {
-      const updated = await api.updateOfficeHour(editingOffice.id, officeForm);
-      setOfficeHours(officeHours.map(oh => oh.id === editingOffice.id ? updated : oh));
-      setOpenOfficeDialog(false);
-      setEditingOffice(null);
-      showMessage('Govorilna ura je posodobljena!');
-    } catch (error) {
-      showMessage('Napaka pri posodabljanju', 'error');
-    }
-  };
-
-  const handleUpdateTutor = async () => {
-    try {
-      const updated = await api.updateTutor(editingTutor.id, tutorForm);
-      setTutors(tutors.map(t => t.id === editingTutor.id ? updated : t));
-      setOpenTutorDialog(false);
-      setEditingTutor(null);
-      showMessage('Profil je posodobljen!');
-    } catch (error) {
-      showMessage('Napaka pri posodabljanju', 'error');
-    }
-  };
-
-  const isEnrolled = (officeId) => {
-    const office = officeHours.find(oh => oh.id === officeId);
-    return office?.students?.includes(user?.id);
-  };
-
-  // Admin view
+  // Admin Dashboard
   const AdminDashboard = () => (
     <Box>
       <Grid container spacing={3}>
@@ -208,17 +248,7 @@ function App() {
               <Typography variant="h6">📊 Statistika</Typography>
               <Typography>Št. govorilnih ur: {officeHours.length}</Typography>
               <Typography>Št. tutorjev: {tutors.length}</Typography>
-              <Typography>Skupaj prijav: {officeHours.reduce((sum, oh) => sum + oh.enrolled, 0)}</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6">👥 Uporabniki</Typography>
-              <Typography>Študentov: 45</Typography>
-              <Typography>Profesorjev: 8</Typography>
-              <Typography>Tutorjev: {tutors.length}</Typography>
+              <Typography>Št. predmetov: {subjects.length}</Typography>
             </CardContent>
           </Card>
         </Grid>
@@ -231,20 +261,20 @@ function App() {
               <TableRow>
                 <TableCell>Predmet</TableCell>
                 <TableCell>Profesor</TableCell>
-                <TableCell>Datum</TableCell>
-                <TableCell>Prijavljeni</TableCell>
+                <TableCell>Učilnica</TableCell>
+                <TableCell>Začetek</TableCell>
                 <TableCell>Akcije</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {officeHours.map(oh => (
                 <TableRow key={oh.id}>
-                  <TableCell>{oh.subject}</TableCell>
-                  <TableCell>{oh.professorName}</TableCell>
-                  <TableCell>{new Date(oh.dateTime).toLocaleString()}</TableCell>
-                  <TableCell>{oh.enrolled}/{oh.maxStudents}</TableCell>
+                  <TableCell>{oh.predmet?.naziv || 'Ni določen'}</TableCell>
+                  <TableCell>{oh.uporabnik?.ime} {oh.uporabnik?.priimek}</TableCell>
+                  <TableCell>{oh.učilnica}</TableCell>
+                  <TableCell>{new Date(oh.zacetek).toLocaleString()}</TableCell>
                   <TableCell>
-                    <IconButton color="error" onClick={() => handleDeleteOffice(oh.id)}>
+                    <IconButton color="error" onClick={() => handleDeleteOfficeHour(oh.id)}>
                       <DeleteIcon />
                     </IconButton>
                   </TableCell>
@@ -257,7 +287,7 @@ function App() {
     </Box>
   );
 
-  // Professor view
+  // Professor Dashboard
   const ProfessorDashboard = () => (
     <Box>
       <Button
@@ -269,29 +299,20 @@ function App() {
         Dodaj govorilno uro
       </Button>
       <Grid container spacing={3}>
-        {officeHours.filter(oh => oh.professorId === user.id).map(oh => (
+        {officeHours.filter(oh => oh.uporabnik?.id === user.id).map(oh => (
           <Grid item xs={12} md={6} key={oh.id}>
             <Card>
               <CardContent>
-                <Typography variant="h6">{oh.subject}</Typography>
-                <Chip label={oh.location} size="small" sx={{ mb: 1 }} />
-                <Typography>📅 {new Date(oh.dateTime).toLocaleString()}</Typography>
-                <Typography>👥 Prijavljeni: {oh.enrolled}/{oh.maxStudents}</Typography>
-                <Box sx={{ mt: 1 }}>
-                  <Typography variant="body2" color="textSecondary">
-                    Prijavljeni študenti: {oh.students?.length || 0}
-                  </Typography>
-                </Box>
+                <Typography variant="h6">{oh.predmet?.naziv || 'Brez predmeta'}</Typography>
+                <Typography>📅 {new Date(oh.zacetek).toLocaleString()}</Typography>
+                <Typography>📍 Učilnica: {oh.učilnica}</Typography>
+                <Typography>👥 Prijavljenih: {oh.rezervacije?.filter(r => r.status === 1).length || 0}</Typography>
               </CardContent>
               <CardActions>
-                <Button size="small" startIcon={<EditIcon />} onClick={() => { 
-                  setEditingOffice(oh); 
-                  setOfficeForm(oh);
-                  setOpenOfficeDialog(true); 
-                }}>
+                <Button size="small" startIcon={<EditIcon />} onClick={() => { setEditingOffice(oh); setOpenOfficeDialog(true); }}>
                   Uredi
                 </Button>
-                <Button size="small" color="error" startIcon={<DeleteIcon />} onClick={() => handleDeleteOffice(oh.id)}>
+                <Button size="small" color="error" startIcon={<DeleteIcon />} onClick={() => handleDeleteOfficeHour(oh.id)}>
                   Izbriši
                 </Button>
               </CardActions>
@@ -302,105 +323,34 @@ function App() {
     </Box>
   );
 
-  // Tutor view
-  const TutorDashboard = () => {
-    const myTutorProfile = tutors.find(t => t.studentId === user.id);
-    return (
-      <Box>
-        <Card sx={{ mb: 3, bgcolor: '#e3f2fd' }}>
-          <CardContent>
-            <Typography variant="h5">👋 Pozdravljen, {user.name}!</Typography>
-            <Typography>Vaša urna postavka: {myTutorProfile?.price || 15}€/uro</Typography>
-            <Rating value={myTutorProfile?.rating || 0} readOnly precision={0.5} />
-          </CardContent>
-        </Card>
-        <Button variant="contained" startIcon={<EditIcon />} onClick={() => {
-          if (myTutorProfile) {
-            setEditingTutor(myTutorProfile);
-            setTutorForm(myTutorProfile);
-            setOpenTutorDialog(true);
-          }
-        }} sx={{ mb: 3 }}>
-          Uredi svoj profil
-        </Button>
-        <Typography variant="h5" gutterBottom>📚 Moje tutorstvo</Typography>
-        <Grid container spacing={3}>
-          {tutors.filter(t => t.studentId === user.id).map(tutor => (
-            <Grid item xs={12} key={tutor.id}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6">{tutor.subject}</Typography>
-                  <Typography>{tutor.description}</Typography>
-                  <Typography variant="h6" color="primary">💰 {tutor.price}€/uro</Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      </Box>
-    );
-  };
-
-  // Student view
+  // Student Dashboard
   const StudentDashboard = () => (
     <Box>
-      <Typography variant="h5" gutterBottom>🎓 Moje prijave</Typography>
-      <Grid container spacing={2} sx={{ mb: 4 }}>
-        {officeHours.filter(oh => oh.students?.includes(user.id)).map(oh => (
-          <Grid item xs={12} md={6} key={oh.id}>
-            <Card sx={{ bgcolor: '#e8f5e9' }}>
-              <CardContent>
-                <Typography variant="h6">{oh.subject}</Typography>
-                <Typography>👨‍🏫 {oh.professorName}</Typography>
-                <Typography>📅 {new Date(oh.dateTime).toLocaleString()}</Typography>
-                <Typography>📍 {oh.location}</Typography>
-              </CardContent>
-              <CardActions>
-                <Button size="small" color="error" onClick={() => handleCancelEnrollment(oh.id)}>
-                  Prekliči prijavo
-                </Button>
-              </CardActions>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-
       <Typography variant="h5" gutterBottom>📖 Razpoložljive govorilne ure</Typography>
       <Grid container spacing={3}>
-        {officeHours.filter(oh => !oh.students?.includes(user.id) && oh.enrolled < oh.maxStudents).map(oh => (
+        {officeHours.map(oh => (
           <Grid item xs={12} md={4} key={oh.id}>
             <Card>
               <CardContent>
-                <Typography variant="h6">{oh.subject}</Typography>
-                <Typography color="textSecondary">{oh.professorName}</Typography>
-                <Typography>📅 {new Date(oh.dateTime).toLocaleString()}</Typography>
-                <Typography>📍 {oh.location}</Typography>
-                <Chip label={`Prostih: ${oh.maxStudents - oh.enrolled}`} color="success" size="small" sx={{ mt: 1 }} />
+                <Typography variant="h6">{oh.predmet?.naziv || 'Brez predmeta'}</Typography>
+                <Typography color="textSecondary">{oh.uporabnik?.ime} {oh.uporabnik?.priimek}</Typography>
+                <Typography>📅 {new Date(oh.zacetek).toLocaleString()}</Typography>
+                <Typography>📍 Učilnica: {oh.učilnica}</Typography>
+                <Chip label={`Prostih: ${10 - (oh.rezervacije?.filter(r => r.status === 1).length || 0)}`} color="success" size="small" sx={{ mt: 1 }} />
               </CardContent>
-              <CardActions>
-                <Button variant="contained" fullWidth onClick={() => handleEnroll(oh.id)}>
-                  Prijavi se
-                </Button>
-              </CardActions>
             </Card>
           </Grid>
         ))}
       </Grid>
 
-      <Typography variant="h5" gutterBottom sx={{ mt: 4 }}>👨‍🏫 Razpoložljivi tutorji</Typography>
+      <Typography variant="h5" gutterBottom sx={{ mt: 4 }}>👨‍🏫 Tutorji</Typography>
       <Grid container spacing={3}>
         {tutors.map(tutor => (
           <Grid item xs={12} md={4} key={tutor.id}>
             <Card>
               <CardContent>
-                <Typography variant="h6">{tutor.name}</Typography>
-                <Chip label={tutor.subject} size="small" color="primary" sx={{ mb: 1 }} />
-                <Typography variant="body2">{tutor.description}</Typography>
-                <Typography variant="h6" color="primary">💰 {tutor.price}€/uro</Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                  <Rating value={tutor.rating} readOnly precision={0.5} size="small" />
-                  <Typography variant="body2" sx={{ ml: 1 }}>({tutor.reviews})</Typography>
-                </Box>
+                <Typography variant="h6">{tutor.ime} {tutor.priimek}</Typography>
+                <Typography variant="body2">{tutor.email}</Typography>
               </CardContent>
               <CardActions>
                 <Button fullWidth variant="outlined" href={`mailto:${tutor.email}`}>
@@ -415,32 +365,12 @@ function App() {
   );
 
   const renderDashboard = () => {
-    switch (user?.role) {
+    const role = getRoleLabel(user?.roleId);
+    switch (role) {
       case 'admin': return <AdminDashboard />;
       case 'professor': return <ProfessorDashboard />;
-      case 'tutor': return <TutorDashboard />;
       case 'student': return <StudentDashboard />;
       default: return <StudentDashboard />;
-    }
-  };
-
-  const getRoleIcon = () => {
-    switch (user?.role) {
-      case 'admin': return <DashboardIcon />;
-      case 'professor': return <SchoolIcon />;
-      case 'tutor': return <PersonIcon />;
-      case 'student': return <BookIcon />;
-      default: return <PersonIcon />;
-    }
-  };
-
-  const getRoleColor = () => {
-    switch (user?.role) {
-      case 'admin': return '#f44336';
-      case 'professor': return '#2196f3';
-      case 'tutor': return '#4caf50';
-      case 'student': return '#ff9800';
-      default: return '#9e9e9e';
     }
   };
 
@@ -452,106 +382,130 @@ function App() {
     );
   }
 
-  if (!user) {
-    return <Typography>Loading...</Typography>;
-  }
-
   return (
     <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="static" sx={{ bgcolor: getRoleColor() }}>
-        <Toolbar>
-          <EventIcon sx={{ mr: 2 }} />
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            📚 TutorHub - Sistem za govorilne ure in tutorstvo
-          </Typography>
-          <Chip
-            avatar={<Avatar>{getRoleIcon()}</Avatar>}
-            label={`${user.name} (${user.role})`}
-            onClick={(e) => setAnchorEl(e.currentTarget)}
-            sx={{ bgcolor: 'white', color: getRoleColor() }}
-          />
-          <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
-            <MenuItem>{user.email}</MenuItem>
-            <MenuItem onClick={() => showMessage('Odjava funkcionalnost bo dodana')}>
-              <LogoutIcon sx={{ mr: 1 }} /> Odjava
-            </MenuItem>
-          </Menu>
-        </Toolbar>
-      </AppBar>
+      {user && (
+        <AppBar position="static" sx={{ bgcolor: getRoleColor() }}>
+          <Toolbar>
+            <EventIcon sx={{ mr: 2 }} />
+            <Typography variant="h6" sx={{ flexGrow: 1 }}>
+              📚 TutorHub - Sistem za govorilne ure in tutorstvo
+            </Typography>
+            <Chip
+              avatar={<Avatar><PersonIcon /></Avatar>}
+              label={`${user.name} (${getRoleLabel(user.roleId)})`}
+              onClick={(e) => setAnchorEl(e.currentTarget)}
+              sx={{ bgcolor: 'white', color: getRoleColor() }}
+            />
+            <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
+              <MenuItem>{user.email}</MenuItem>
+              <MenuItem onClick={handleLogout}>
+                <LogoutIcon sx={{ mr: 1 }} /> Odjava
+              </MenuItem>
+            </Menu>
+          </Toolbar>
+        </AppBar>
+      )}
 
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        {renderDashboard()}
+        {user ? renderDashboard() : null}
       </Container>
 
-      {/* Dialog za dodajanje/urejanje govorilnih ur */}
-      <Dialog open={openOfficeDialog} onClose={() => setOpenOfficeDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>{editingOffice ? 'Uredi govorilno uro' : 'Dodaj govorilno uro'}</DialogTitle>
+      {/* Login Dialog */}
+      <Dialog open={openLoginDialog} onClose={() => {}} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <LoginIcon /> Prijava v sistem
+          </Box>
+        </DialogTitle>
         <DialogContent>
-          <TextField 
-            fullWidth 
-            label="Predmet" 
-            margin="normal" 
-            value={officeForm.subject}
-            onChange={(e) => setOfficeForm({...officeForm, subject: e.target.value})}
-          />
-          <TextField 
-            fullWidth 
-            label="Lokacija" 
+          <TextField
+            fullWidth
+            label="Email"
+            type="email"
             margin="normal"
-            value={officeForm.location}
-            onChange={(e) => setOfficeForm({...officeForm, location: e.target.value})}
+            value={loginEmail}
+            onChange={(e) => setLoginEmail(e.target.value)}
           />
-          <TextField 
-            fullWidth 
-            type="datetime-local" 
-            label="Datum in čas" 
-            margin="normal" 
-            InputLabelProps={{ shrink: true }}
-            value={officeForm.dateTime}
-            onChange={(e) => setOfficeForm({...officeForm, dateTime: e.target.value})}
-          />
-          <TextField 
-            fullWidth 
-            type="number" 
-            label="Max študentov" 
+          <TextField
+            fullWidth
+            label="Geslo"
+            type="password"
             margin="normal"
-            value={officeForm.maxStudents}
-            onChange={(e) => setOfficeForm({...officeForm, maxStudents: parseInt(e.target.value)})}
+            value={loginPassword}
+            onChange={(e) => setLoginPassword(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenOfficeDialog(false)}>Prekliči</Button>
-          <Button variant="contained" onClick={editingOffice ? handleUpdateOffice : handleCreateOffice}>
-            Shrani
+          <Button variant="contained" onClick={handleLogin} fullWidth>
+            Prijava
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Dialog za urejanje tutorski profila */}
-      <Dialog open={openTutorDialog} onClose={() => setOpenTutorDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Uredi tutorski profil</DialogTitle>
+      {/* Dialog za govorilne ure */}
+      <Dialog open={openOfficeDialog} onClose={() => { setOpenOfficeDialog(false); setEditingOffice(null); }} maxWidth="sm" fullWidth>
+        <DialogTitle>{editingOffice ? 'Uredi govorilno uro' : 'Dodaj govorilno uro'}</DialogTitle>
         <DialogContent>
-          <TextField 
-            fullWidth 
-            label="Opis" 
-            multiline 
-            rows={3} 
+          <TextField
+            fullWidth
+            type="datetime-local"
+            label="Začetek"
             margin="normal"
-            value={tutorForm.description}
-            onChange={(e) => setTutorForm({...tutorForm, description: e.target.value})}
+            InputLabelProps={{ shrink: true }}
+            value={editingOffice ? editingOffice.zacetek?.slice(0, 16) : newOfficeHour.zacetek}
+            onChange={(e) => editingOffice 
+              ? setEditingOffice({ ...editingOffice, zacetek: e.target.value })
+              : setNewOfficeHour({ ...newOfficeHour, zacetek: e.target.value })
+            }
           />
-          <TextField 
-            fullWidth 
-            type="number" 
-            label="Cena (€/uro)" 
+          <TextField
+            fullWidth
+            type="datetime-local"
+            label="Konec (opcijsko)"
             margin="normal"
-            value={tutorForm.price}
-            onChange={(e) => setTutorForm({...tutorForm, price: parseFloat(e.target.value)})}
+            InputLabelProps={{ shrink: true }}
+            value={editingOffice ? editingOffice.konec?.slice(0, 16) : newOfficeHour.konec}
+            onChange={(e) => editingOffice
+              ? setEditingOffice({ ...editingOffice, konec: e.target.value })
+              : setNewOfficeHour({ ...newOfficeHour, konec: e.target.value })
+            }
           />
+          <TextField
+            fullWidth
+            type="number"
+            label="Učilnica"
+            margin="normal"
+            value={editingOffice ? editingOffice.učilnica : newOfficeHour.učilnica}
+            onChange={(e) => editingOffice
+              ? setEditingOffice({ ...editingOffice, učilnica: parseInt(e.target.value) })
+              : setNewOfficeHour({ ...newOfficeHour, učilnica: e.target.value })
+            }
+          />
+          <TextField
+            fullWidth
+            select
+            label="Predmet"
+            margin="normal"
+            SelectProps={{ native: true }}
+            value={editingOffice ? editingOffice.predmetId || '' : newOfficeHour.predmetId}
+            onChange={(e) => editingOffice
+              ? setEditingOffice({ ...editingOffice, predmetId: parseInt(e.target.value) || null })
+              : setNewOfficeHour({ ...newOfficeHour, predmetId: e.target.value })
+            }
+          >
+            <option value="">Brez predmeta</option>
+            {subjects.map(s => (
+              <option key={s.id} value={s.id}>{s.naziv}</option>
+            ))}
+          </TextField>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenTutorDialog(false)}>Prekliči</Button>
-          <Button variant="contained" onClick={handleUpdateTutor}>Shrani</Button>
+          <Button onClick={() => { setOpenOfficeDialog(false); setEditingOffice(null); }}>Prekliči</Button>
+          <Button variant="contained" onClick={editingOffice ? handleUpdateOfficeHour : handleCreateOfficeHour}>
+            {editingOffice ? 'Shrani spremembe' : 'Dodaj'}
+          </Button>
         </DialogActions>
       </Dialog>
 

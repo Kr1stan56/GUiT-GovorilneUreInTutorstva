@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Spletna rezervacija govorilnih ur in tutorstva\\GUiT-GovorilneUreInTutorstva\\GUiT - GovorilneUreInTutorstva\\TutoringSystem\\TutoringSystem.Server\\TutoringSystem.Server.csproj": {}
+    "C:\\xampp\\htdocs\\GUiT-GovorilneUreInTutorstva\\GUiT - GovorilneUreInTutorstva\\TutoringSystem\\TutoringSystem.Server\\TutoringSystem.Server.csproj": {}
   },
   "projects": {
-    "C:\\Spletna rezervacija govorilnih ur in tutorstva\\GUiT-GovorilneUreInTutorstva\\GUiT - GovorilneUreInTutorstva\\TutoringSystem\\TutoringSystem.Server\\TutoringSystem.Server.csproj": {
+    "C:\\xampp\\htdocs\\GUiT-GovorilneUreInTutorstva\\GUiT - GovorilneUreInTutorstva\\TutoringSystem\\TutoringSystem.Server\\TutoringSystem.Server.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Spletna rezervacija govorilnih ur in tutorstva\\GUiT-GovorilneUreInTutorstva\\GUiT - GovorilneUreInTutorstva\\TutoringSystem\\TutoringSystem.Server\\TutoringSystem.Server.csproj",
+        "projectUniqueName": "C:\\xampp\\htdocs\\GUiT-GovorilneUreInTutorstva\\GUiT - GovorilneUreInTutorstva\\TutoringSystem\\TutoringSystem.Server\\TutoringSystem.Server.csproj",
         "projectName": "TutoringSystem.Server",
-        "projectPath": "C:\\Spletna rezervacija govorilnih ur in tutorstva\\GUiT-GovorilneUreInTutorstva\\GUiT - GovorilneUreInTutorstva\\TutoringSystem\\TutoringSystem.Server\\TutoringSystem.Server.csproj",
-        "packagesPath": "C:\\Users\\Uporabnik\\.nuget\\packages\\",
-        "outputPath": "C:\\Spletna rezervacija govorilnih ur in tutorstva\\GUiT-GovorilneUreInTutorstva\\GUiT - GovorilneUreInTutorstva\\TutoringSystem\\TutoringSystem.Server\\obj\\",
+        "projectPath": "C:\\xampp\\htdocs\\GUiT-GovorilneUreInTutorstva\\GUiT - GovorilneUreInTutorstva\\TutoringSystem\\TutoringSystem.Server\\TutoringSystem.Server.csproj",
+        "packagesPath": "C:\\Users\\Tim\\.nuget\\packages\\",
+        "outputPath": "C:\\xampp\\htdocs\\GUiT-GovorilneUreInTutorstva\\GUiT - GovorilneUreInTutorstva\\TutoringSystem\\TutoringSystem.Server\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\Uporabnik\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Tim\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -51,21 +51,19 @@
           "dependencies": {
             "BCrypt.Net-Next": {
               "target": "Package",
-              "version": "[4.0.3, )"
-            },
-            "Microsoft.AspNetCore.Authentication.JwtBearer": {
-              "target": "Package",
-              "version": "[8.0.0, )"
+              "version": "[4.1.0, )"
             },
             "Microsoft.EntityFrameworkCore": {
               "target": "Package",
               "version": "[8.0.0, )"
             },
             "Microsoft.EntityFrameworkCore.Design": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
               "target": "Package",
               "version": "[8.0.0, )"
             },
-            "Microsoft.EntityFrameworkCore.Relational": {
+            "Microsoft.EntityFrameworkCore.Tools": {
               "target": "Package",
               "version": "[8.0.0, )"
             },
@@ -75,7 +73,7 @@
             },
             "Swashbuckle.AspNetCore": {
               "target": "Package",
-              "version": "[6.4.0, )"
+              "version": "[6.5.0, )"
             }
           },
           "imports": [
@@ -97,7 +95,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.419/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.300/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
