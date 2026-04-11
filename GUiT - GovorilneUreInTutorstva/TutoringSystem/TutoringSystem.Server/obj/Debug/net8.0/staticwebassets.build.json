@@ -1,0 +1,23 @@
+{
+  "Version": 1,
+  "Hash": "5FXionNqIzlXhwvVzUrXw0n2LuzSSSxpv2X55ea7YJ0=",
+  "Source": "TutoringSystem.Server",
+  "BasePath": "_content/TutoringSystem.Server",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [
+    {
+      "Identity": "C:\\xampp\\htdocs\\GUiT-GovorilneUreInTutorstva\\GUiT - GovorilneUreInTutorstva\\TutoringSystem\\tutoringsystem.client\\tutoringsystem.client.esproj",
+      "Version": 2,
+      "Source": "tutoringsystem.client",
+      "GetPublishAssetsTargets": "GetCurrentProjectPublishStaticWebAssetItems",
+      "AdditionalPublishProperties": "Configuration=Debug;Platform=AnyCPU",
+      "AdditionalPublishPropertiesToRemove": "WebPublishProfileFile;TargetFramework;RuntimeIdentifier;SelfContained",
+      "GetBuildAssetsTargets": "GetCurrentProjectBuildStaticWebAssetItems",
+      "AdditionalBuildProperties": "Configuration=Debug;Platform=AnyCPU",
+      "AdditionalBuildPropertiesToRemove": "WebPublishProfileFile;TargetFramework;RuntimeIdentifier;SelfContained"
+    }
+  ],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}

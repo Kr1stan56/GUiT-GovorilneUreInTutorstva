@@ -6,10 +6,10 @@
 *.sln.docstates
 
 # Build results
-bin/
-obj/
-Debug/
-Release/
+#bin/
+#obj/
+#Debug/
+#Release/
 *.exe
 *.dll
 
