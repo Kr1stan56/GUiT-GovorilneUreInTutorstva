@@ -8,23 +8,23 @@
     "net10.0": []
   },
   "packageFolders": {
-    "C:\\Users\\Uporabnik\\.nuget\\packages\\": {},
+    "C:\\Users\\Tim\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Spletna rezervacija govorilnih ur in tutorstva\\GUiT-GovorilneUreInTutorstva\\GUiT - GovorilneUreInTutorstva\\Guit - GovorilneUreInTutorstvo\\Guit - GovorilneUreInTutorstvo\\Guit - GovorilneUreInTutorstvo.csproj",
+      "projectUniqueName": "C:\\xampp\\htdocs\\GUiT-GovorilneUreInTutorstva\\GUiT - GovorilneUreInTutorstva\\Guit - GovorilneUreInTutorstvo\\Guit - GovorilneUreInTutorstvo\\Guit - GovorilneUreInTutorstvo.csproj",
       "projectName": "Guit - GovorilneUreInTutorstvo",
-      "projectPath": "C:\\Spletna rezervacija govorilnih ur in tutorstva\\GUiT-GovorilneUreInTutorstva\\GUiT - GovorilneUreInTutorstva\\Guit - GovorilneUreInTutorstvo\\Guit - GovorilneUreInTutorstvo\\Guit - GovorilneUreInTutorstvo.csproj",
-      "packagesPath": "C:\\Users\\Uporabnik\\.nuget\\packages\\",
-      "outputPath": "C:\\Spletna rezervacija govorilnih ur in tutorstva\\GUiT-GovorilneUreInTutorstva\\GUiT - GovorilneUreInTutorstva\\Guit - GovorilneUreInTutorstvo\\Guit - GovorilneUreInTutorstvo\\obj\\",
+      "projectPath": "C:\\xampp\\htdocs\\GUiT-GovorilneUreInTutorstva\\GUiT - GovorilneUreInTutorstva\\Guit - GovorilneUreInTutorstvo\\Guit - GovorilneUreInTutorstvo\\Guit - GovorilneUreInTutorstvo.csproj",
+      "packagesPath": "C:\\Users\\Tim\\.nuget\\packages\\",
+      "outputPath": "C:\\xampp\\htdocs\\GUiT-GovorilneUreInTutorstva\\GUiT - GovorilneUreInTutorstva\\Guit - GovorilneUreInTutorstvo\\Guit - GovorilneUreInTutorstvo\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\Uporabnik\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\Tim\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -49,9 +49,8 @@
       "restoreAuditProperties": {
         "enableAudit": "true",
         "auditLevel": "low",
-        "auditMode": "all"
-      },
-      "SdkAnalysisLevel": "10.0.200"
+        "auditMode": "direct"
+      }
     },
     "frameworks": {
       "net10.0": {
@@ -67,15 +66,7 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
-        "frameworkReferences": {
-          "Microsoft.AspNetCore.App": {
-            "privateAssets": "none"
-          },
-          "Microsoft.NETCore.App": {
-            "privateAssets": "all"
-          }
-        },
-        "runtimeIdentifierGraphPath": "C:\\Users\\Uporabnik\\.dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.300/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
