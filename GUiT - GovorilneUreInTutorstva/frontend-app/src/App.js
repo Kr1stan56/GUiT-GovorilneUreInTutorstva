@@ -1,65 +1,46 @@
 import { useState, useEffect } from 'react'
 
-interface OfficeHour {
-    id: number
-    professorName: string
-    subject: string
-    dateTime: string
-    location: string
-    maxStudents: number
-    enrolled: number
-}
-
-interface Tutor {
-    id: number
-    name: string
-    subject: string
-    description: string
-    price: number
-    email: string
-}
-
 const API = {
-    getOfficeHours: async (): Promise<OfficeHour[]> => {
+    getOfficeHours: async () => {
         return [
             { id: 1, professorName: "Dr. Novak", subject: "Programiranje", dateTime: "2026-04-15T10:00", location: "Zoom", maxStudents: 5, enrolled: 2 },
             { id: 2, professorName: "Dr. Horvat", subject: "Baze podatkov", dateTime: "2026-04-16T14:00", location: "R2-12", maxStudents: 3, enrolled: 1 },
         ]
     },
-    createOfficeHour: async (data: Omit<OfficeHour, 'id'>): Promise<OfficeHour> => {
+    createOfficeHour: async (data) => {
         return { id: Date.now(), ...data }
     },
-    updateOfficeHour: async (id: number, data: OfficeHour): Promise<OfficeHour> => {
+    updateOfficeHour: async (id, data) => {
         return data
     },
-    deleteOfficeHour: async (id: number): Promise<void> => {
+    deleteOfficeHour: async (id) => {
         console.log("Deleted:", id)
     },
-    getTutors: async (): Promise<Tutor[]> => {
+    getTutors: async () => {
         return [
             { id: 1, name: "Luka M.", subject: "Programiranje", description: "Pomoč pri Javi", price: 15, email: "luka@student.com" },
             { id: 2, name: "Ana K.", subject: "Matematika", description: "Vsa poglavja", price: 12, email: "ana@student.com" },
         ]
     },
-    createTutor: async (data: Omit<Tutor, 'id'>): Promise<Tutor> => {
+    createTutor: async (data) => {
         return { id: Date.now(), ...data }
     },
-    updateTutor: async (id: number, data: Tutor): Promise<Tutor> => {
+    updateTutor: async (id, data) => {
         return data
     },
-    deleteTutor: async (id: number): Promise<void> => {
+    deleteTutor: async (id) => {
         console.log("Deleted tutor:", id)
     }
 }
 
 function App() {
-    const [tab, setTab] = useState<'office' | 'tutor'>('office')
-    const [officeHours, setOfficeHours] = useState<OfficeHour[]>([])
-    const [tutors, setTutors] = useState<Tutor[]>([])
+    const [tab, setTab] = useState('office')
+    const [officeHours, setOfficeHours] = useState([])
+    const [tutors, setTutors] = useState([])
     const [showOfficeForm, setShowOfficeForm] = useState(false)
     const [showTutorForm, setShowTutorForm] = useState(false)
-    const [editingOffice, setEditingOffice] = useState<OfficeHour | null>(null)
-    const [editingTutor, setEditingTutor] = useState<Tutor | null>(null)
+    const [editingOffice, setEditingOffice] = useState(null)
+    const [editingTutor, setEditingTutor] = useState(null)
     const [officeForm, setOfficeForm] = useState({ professorName: '', subject: '', dateTime: '', location: '', maxStudents: 5, enrolled: 0 })
     const [tutorForm, setTutorForm] = useState({ name: '', subject: '', description: '', price: 10, email: '' })
 
@@ -78,7 +59,7 @@ function App() {
         setTutors(data)
     }
 
-    const handleOfficeSubmit = async (e: React.FormEvent) => {
+    const handleOfficeSubmit = async (e) => {
         e.preventDefault()
         if (editingOffice) {
             const updated = await API.updateOfficeHour(editingOffice.id, { ...officeForm, id: editingOffice.id })
@@ -92,14 +73,14 @@ function App() {
         setShowOfficeForm(false)
     }
 
-    const handleDeleteOffice = async (id: number) => {
+    const handleDeleteOffice = async (id) => {
         if (window.confirm('Izbriši govorilno uro?')) {
             await API.deleteOfficeHour(id)
             setOfficeHours(officeHours.filter(o => o.id !== id))
         }
     }
 
-    const handleTutorSubmit = async (e: React.FormEvent) => {
+    const handleTutorSubmit = async (e) => {
         e.preventDefault()
         if (editingTutor) {
             const updated = await API.updateTutor(editingTutor.id, { ...tutorForm, id: editingTutor.id })
@@ -113,7 +94,7 @@ function App() {
         setShowTutorForm(false)
     }
 
-    const handleDeleteTutor = async (id: number) => {
+    const handleDeleteTutor = async (id) => {
         if (window.confirm('Izbriši tutorja?')) {
             await API.deleteTutor(id)
             setTutors(tutors.filter(t => t.id !== id))
