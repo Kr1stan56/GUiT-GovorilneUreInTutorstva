@@ -1,142 +1,410 @@
-using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
-using TutoringSystem.Server.Models;
+using Microsoft.EntityFrameworkCore;
+using StudentskaSluzba.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
-namespace TutoringSystem.Server.Controllers
+namespace StudentskaSluzba.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
     public class TutoringController : ControllerBase
     {
-        // Mock podatki
-        private static List<OfficeHour> officeHours = new()
-        {
-            new OfficeHour
-            {
-                Id = 1,
-                ProfessorName = "Dr. Novak",
-                ProfessorId = 1,
-                Subject = "Programiranje",
-                DateTime = "2026-04-15T10:00",
-                Location = "Zoom",
-                MaxStudents = 5,
-                Enrolled = 2,
-                Students = new List<int> { 2, 3 }
-            },
-            new OfficeHour
-            {
-                Id = 2,
-                ProfessorName = "Dr. Horvat",
-                ProfessorId = 2,
-                Subject = "Baze podatkov",
-                DateTime = "2026-04-16T14:00",
-                Location = "R2-12",
-                MaxStudents = 3,
-                Enrolled = 1,
-                Students = new List<int> { 4 }
-            }
-        };
+        private readonly ApplicationDbContext _context;
 
-        private static List<Tutor> tutors = new()
+        public TutoringController(ApplicationDbContext context)
         {
-            new Tutor
-            {
-                Id = 1,
-                Name = "Luka M.",
-                StudentId = 5,
-                Subject = "Programiranje",
-                Description = "Pomoè pri Javi, Python",
-                Price = 15,
-                Email = "luka@student.com",
-                Rating = 4.8,
-                Reviews = 12
-            },
-            new Tutor
-            {
-                Id = 2,
-                Name = "Ana K.",
-                StudentId = 6,
-                Subject = "Matematika",
-                Description = "Vsa poglavja",
-                Price = 12,
-                Email = "ana@student.com",
-                Rating = 4.9,
-                Reviews = 8
-            }
-        };
-
-        private static List<User> users = new()
-        {
-            new User { Id = 1, Name = "Admin User", Email = "admin@tutorhub.com", Password = "admin123", Role = "admin" },
-            new User { Id = 2, Name = "Prof. Janez Novak", Email = "profesor@faks.si", Password = "prof123", Role = "professor" },
-            new User { Id = 3, Name = "Luka M.", Email = "luka@student.com", Password = "student123", Role = "tutor" },
-            new User { Id = 4, Name = "Ana K.", Email = "ana@student.com", Password = "student123", Role = "student" }
-        };
-
-        // GET: api/tutoring/officehours
-        [HttpGet("officehours")]
-        public IActionResult GetOfficeHours()
-        {
-            return Ok(officeHours);
+            _context = context;
         }
 
-        // POST: api/tutoring/officehours
-        [HttpPost("officehours")]
-        public IActionResult CreateOfficeHour([FromBody] OfficeHour officeHour)
+        // ========== USERS (Uporabniki) ==========
+
+        // GET: api/tutoring/users
+        [HttpGet("users")]
+        public async Task<ActionResult<IEnumerable<User>>> GetUsers()
         {
-            officeHour.Id = officeHours.Max(o => o.Id) + 1;
-            officeHours.Add(officeHour);
-            return Ok(officeHour);
+            var users = await _context.Users
+                .Include(u => u.Rola)
+                .Include(u => u.TutorPredmeti)
+                    .ThenInclude(t => t.Predmet)
+                .ToListAsync();
+            return Ok(users);
         }
 
-        // PUT: api/tutoring/officehours/5
-        [HttpPut("officehours/{id}")]
-        public IActionResult UpdateOfficeHour(int id, [FromBody] OfficeHour officeHour)
+        // GET: api/tutoring/users/{id}
+        [HttpGet("users/{id}")]
+        public async Task<ActionResult<User>> GetUser(int id)
         {
-            var existing = officeHours.FirstOrDefault(o => o.Id == id);
-            if (existing == null)
-                return NotFound();
+            var user = await _context.Users
+                .Include(u => u.Rola)
+                .Include(u => u.TutorPredmeti)
+                    .ThenInclude(t => t.Predmet)
+                .Include(u => u.GovorilneUre)
+                .Include(u => u.Rezervacije)
+                    .ThenInclude(r => r.GovorilnaUra)
+                .FirstOrDefaultAsync(u => u.Id == id);
 
-            var index = officeHours.IndexOf(existing);
-            officeHour.Id = id;
-            officeHours[index] = officeHour;
-            return Ok(officeHour);
+            if (user == null)
+                return NotFound($"Uporabnik z ID {id} ne obstaja");
+
+            return Ok(user);
         }
 
-        // DELETE: api/tutoring/officehours/5
-        [HttpDelete("officehours/{id}")]
-        public IActionResult DeleteOfficeHour(int id)
+        // GET: api/tutoring/users/role/{roleId}
+        [HttpGet("users/role/{roleId}")]
+        public async Task<ActionResult<IEnumerable<User>>> GetUsersByRole(int roleId)
         {
-            var officeHour = officeHours.FirstOrDefault(o => o.Id == id);
-            if (officeHour == null)
-                return NotFound();
+            var users = await _context.Users
+                .Include(u => u.Rola)
+                .Where(u => u.RolaId == roleId)
+                .ToListAsync();
+            return Ok(users);
+        }
 
-            officeHours.Remove(officeHour);
-            return Ok();
+        // GET: api/tutoring/students
+        [HttpGet("students")]
+        public async Task<ActionResult<IEnumerable<User>>> GetStudents()
+        {
+            var students = await _context.Users
+                .Include(u => u.Rola)
+                .Where(u => u.RolaId == 3)
+                .ToListAsync();
+            return Ok(students);
         }
 
         // GET: api/tutoring/tutors
         [HttpGet("tutors")]
-        public IActionResult GetTutors()
+        public async Task<ActionResult<IEnumerable<User>>> GetTutors()
         {
+            var tutors = await _context.Users
+                .Include(u => u.Rola)
+                .Where(u => u.RolaId == 2 || u.RolaId == 4) // Tutorji in profesorji
+                .ToListAsync();
             return Ok(tutors);
         }
 
-        // POST: api/tutoring/login
-        [HttpPost("login")]
-        public IActionResult Login([FromBody] LoginRequest request)
+        // POST: api/tutoring/users
+        [HttpPost("users")]
+        public async Task<ActionResult<User>> CreateUser([FromBody] User user)
         {
-            var user = users.FirstOrDefault(u => u.Email == request.Email && u.Password == request.Password);
-            if (user == null)
-                return Unauthorized(new { message = "Invalid email or password" });
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-            return Ok(new { user.Id, user.Name, user.Email, user.Role });
+            if (await _context.Users.AnyAsync(u => u.Email == user.Email))
+                return BadRequest("Email že obstaja");
+
+            // TODO: Hashiraj geslo!
+            user.GesloHash = HashPassword(user.GesloHash);
+
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
         }
-    }
 
-    public class LoginRequest
-    {
-        public string Email { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
+        // ========== SUBJECTS (Predmeti) ==========
+
+        // GET: api/tutoring/subjects
+        [HttpGet("subjects")]
+        public async Task<ActionResult<IEnumerable<Subject>>> GetSubjects()
+        {
+            var subjects = await _context.Subjects
+                .Include(s => s.Tutorji)
+                    .ThenInclude(t => t.Uporabnik)
+                .Include(s => s.GovorilneUre)
+                .ToListAsync();
+            return Ok(subjects);
+        }
+
+        // POST: api/tutoring/subjects
+        [HttpPost("subjects")]
+        public async Task<ActionResult<Subject>> CreateSubject([FromBody] Subject subject)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            _context.Subjects.Add(subject);
+            await _context.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetSubject), new { id = subject.Id }, subject);
+        }
+
+        // GET: api/tutoring/subjects/{id}
+        [HttpGet("subjects/{id}")]
+        public async Task<ActionResult<Subject>> GetSubject(int id)
+        {
+            var subject = await _context.Subjects
+                .Include(s => s.Tutorji)
+                    .ThenInclude(t => t.Uporabnik)
+                .Include(s => s.GovorilneUre)
+                    .ThenInclude(g => g.Uporabnik)
+                .FirstOrDefaultAsync(s => s.Id == id);
+
+            if (subject == null)
+                return NotFound();
+
+            return Ok(subject);
+        }
+
+        // ========== TUTOR-SUBJECT ASSIGNMENTS ==========
+
+        // GET: api/tutoring/assignments
+        [HttpGet("assignments")]
+        public async Task<ActionResult<IEnumerable<Tutor>>> GetTutorSubjectAssignments()
+        {
+            var assignments = await _context.TutorSubjects
+                .Include(t => t.Uporabnik)
+                .Include(t => t.Predmet)
+                .ToListAsync();
+            return Ok(assignments);
+        }
+
+        // POST: api/tutoring/assignments
+        [HttpPost("assignments")]
+        public async Task<ActionResult<Tutor>> AssignTutorToSubject([FromBody] Tutor assignment)
+        {
+            var exists = await _context.TutorSubjects
+                .AnyAsync(t => t.UserId == assignment.UserId && t.PredmetId == assignment.PredmetId);
+
+            if (exists)
+                return BadRequest("Tutor je že dodeljen temu predmetu");
+
+            _context.TutorSubjects.Add(assignment);
+            await _context.SaveChangesAsync();
+            return Ok(assignment);
+        }
+
+        // DELETE: api/tutoring/assignments/{userId}/{subjectId}
+        [HttpDelete("assignments/{userId}/{subjectId}")]
+        public async Task<IActionResult> RemoveTutorFromSubject(int userId, int subjectId)
+        {
+            var assignment = await _context.TutorSubjects
+                .FirstOrDefaultAsync(t => t.UserId == userId && t.PredmetId == subjectId);
+
+            if (assignment == null)
+                return NotFound();
+
+            _context.TutorSubjects.Remove(assignment);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        // ========== OFFICE HOURS (Govorilne ure) ==========
+
+        // GET: api/tutoring/office-hours
+        [HttpGet("office-hours")]
+        public async Task<ActionResult<IEnumerable<OfficeHour>>> GetOfficeHours()
+        {
+            var officeHours = await _context.OfficeHours
+                .Include(o => o.Uporabnik)
+                .Include(o => o.Predmet)
+                .Include(o => o.Rezervacije)
+                .OrderBy(o => o.Zacetek)
+                .ToListAsync();
+            return Ok(officeHours);
+        }
+
+        // GET: api/tutoring/office-hours/{id}
+        [HttpGet("office-hours/{id}")]
+        public async Task<ActionResult<OfficeHour>> GetOfficeHour(int id)
+        {
+            var officeHour = await _context.OfficeHours
+                .Include(o => o.Uporabnik)
+                .Include(o => o.Predmet)
+                .Include(o => o.Rezervacije)
+                .FirstOrDefaultAsync(o => o.Id == id);
+
+            if (officeHour == null)
+                return NotFound();
+
+            return Ok(officeHour);
+        }
+
+        // GET: api/tutoring/office-hours/tutor/{tutorId}
+        [HttpGet("office-hours/tutor/{tutorId}")]
+        public async Task<ActionResult<IEnumerable<OfficeHour>>> GetOfficeHoursByTutor(int tutorId)
+        {
+            var officeHours = await _context.OfficeHours
+                .Include(o => o.Uporabnik)
+                .Include(o => o.Predmet)
+                .Where(o => o.UserId == tutorId)
+                .OrderBy(o => o.Zacetek)
+                .ToListAsync();
+            return Ok(officeHours);
+        }
+
+        // POST: api/tutoring/office-hours
+        [HttpPost("office-hours")]
+        public async Task<ActionResult<OfficeHour>> CreateOfficeHour([FromBody] OfficeHour officeHour)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var user = await _context.Users.FindAsync(officeHour.UserId);
+            if (user == null)
+                return BadRequest("Uporabnik ne obstaja");
+
+            if (user.RolaId != 2 && user.RolaId != 4)
+                return BadRequest("Samo tutorji in profesorji lahko ustvarjajo govorilne ure");
+
+            if (officeHour.Zacetek < DateTime.Now)
+                return BadRequest("Zaèetek ne more biti v preteklosti");
+
+            _context.OfficeHours.Add(officeHour);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetOfficeHour), new { id = officeHour.Id }, officeHour);
+        }
+
+        // DELETE: api/tutoring/office-hours/{id}
+        [HttpDelete("office-hours/{id}")]
+        public async Task<IActionResult> DeleteOfficeHour(int id)
+        {
+            var officeHour = await _context.OfficeHours
+                .Include(o => o.Rezervacije)
+                .FirstOrDefaultAsync(o => o.Id == id);
+
+            if (officeHour == null)
+                return NotFound();
+
+            if (officeHour.Rezervacije.Any(r => r.Status == 1))
+                return BadRequest("Ne moreš izbrisati, ker obstajajo potrjene rezervacije");
+
+            _context.OfficeHours.Remove(officeHour);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        // ========== RESERVATIONS ==========
+
+        // GET: api/tutoring/reservations
+        [HttpGet("reservations")]
+        public async Task<ActionResult<IEnumerable<Reservation>>> GetReservations()
+        {
+            var reservations = await _context.Reservations
+                .Include(r => r.Uporabnik)
+                .Include(r => r.GovorilnaUra)
+                    .ThenInclude(g => g.Uporabnik)
+                .Include(r => r.GovorilnaUra)
+                    .ThenInclude(g => g.Predmet)
+                .ToListAsync();
+            return Ok(reservations);
+        }
+
+        // GET: api/tutoring/reservations/user/{userId}
+        [HttpGet("reservations/user/{userId}")]
+        public async Task<ActionResult<IEnumerable<Reservation>>> GetReservationsByUser(int userId)
+        {
+            var reservations = await _context.Reservations
+                .Include(r => r.Uporabnik)
+                .Include(r => r.GovorilnaUra)
+                .Where(r => r.UserId == userId)
+                .OrderByDescending(r => r.GovorilnaUra.Zacetek)
+                .ToListAsync();
+            return Ok(reservations);
+        }
+
+        // POST: api/tutoring/reservations
+        [HttpPost("reservations")]
+        public async Task<ActionResult<Reservation>> CreateReservation([FromBody] Reservation reservation)
+        {
+            var officeHour = await _context.OfficeHours
+                .Include(o => o.Rezervacije)
+                .FirstOrDefaultAsync(o => o.Id == reservation.OfficeHourId);
+
+            if (officeHour == null)
+                return BadRequest("Govorilna ura ne obstaja");
+
+            if (officeHour.Zacetek < DateTime.Now)
+                return BadRequest("Ne moreš rezervirati preteklega termina");
+
+            var alreadyReserved = await _context.Reservations
+                .AnyAsync(r => r.UserId == reservation.UserId &&
+                              r.OfficeHourId == reservation.OfficeHourId &&
+                              r.Status != 2);
+
+            if (alreadyReserved)
+                return BadRequest("Že imaš rezervacijo za ta termin");
+
+            var confirmedCount = officeHour.Rezervacije.Count(r => r.Status == 1);
+            if (confirmedCount >= 10)
+                return BadRequest("Ni veè prostih mest");
+
+            reservation.Status = 0; // èaka na potrditev
+            _context.Reservations.Add(reservation);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetReservation), new { id = reservation.Id }, reservation);
+        }
+
+        // GET: api/tutoring/reservations/{id}
+        [HttpGet("reservations/{id}")]
+        public async Task<ActionResult<Reservation>> GetReservation(int id)
+        {
+            var reservation = await _context.Reservations
+                .Include(r => r.Uporabnik)
+                .Include(r => r.GovorilnaUra)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (reservation == null)
+                return NotFound();
+
+            return Ok(reservation);
+        }
+
+        // PUT: api/tutoring/reservations/{id}/status
+        [HttpPut("reservations/{id}/status")]
+        public async Task<IActionResult> UpdateReservationStatus(int id, [FromBody] int status)
+        {
+            var reservation = await _context.Reservations.FindAsync(id);
+            if (reservation == null)
+                return NotFound();
+
+            if (status < 0 || status > 3)
+                return BadRequest("Neveljaven status");
+
+            reservation.Status = status;
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        // DELETE: api/tutoring/reservations/{id}
+        [HttpDelete("reservations/{id}")]
+        public async Task<IActionResult> DeleteReservation(int id)
+        {
+            var reservation = await _context.Reservations.FindAsync(id);
+            if (reservation == null)
+                return NotFound();
+
+            _context.Reservations.Remove(reservation);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        // ========== DASHBOARD ==========
+
+        // GET: api/tutoring/dashboard
+        [HttpGet("dashboard")]
+        public async Task<ActionResult<object>> GetDashboardStats()
+        {
+            return Ok(new
+            {
+                TotalStudents = await _context.Users.CountAsync(u => u.RolaId == 3),
+                TotalTutors = await _context.Users.CountAsync(u => u.RolaId == 2),
+                TotalProfessors = await _context.Users.CountAsync(u => u.RolaId == 4),
+                TotalSubjects = await _context.Subjects.CountAsync(),
+                TotalOfficeHours = await _context.OfficeHours.CountAsync(),
+                PendingReservations = await _context.Reservations.CountAsync(r => r.Status == 0),
+                ConfirmedReservations = await _context.Reservations.CountAsync(r => r.Status == 1),
+                CompletedReservations = await _context.Reservations.CountAsync(r => r.Status == 3)
+            });
+        }
+
+        private string HashPassword(string password)
+        {
+            // TODO: Implementiraj BCrypt ali podobno
+            return password;
+        }
     }
 }
