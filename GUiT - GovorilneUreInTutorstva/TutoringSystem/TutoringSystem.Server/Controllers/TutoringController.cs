@@ -511,6 +511,27 @@ namespace StudentskaSluzba.Controllers
                 .ToListAsync();
             return Ok(officeHours);
         }
+        // ========== PREKLIC PRIJAVE ==========
+        [HttpPost("officehours/{id}/cancel")]
+        public async Task<IActionResult> CancelEnrollment(int id, [FromBody] int studentId)
+        {
+            var reservation = await _context.Reservations
+                .FirstOrDefaultAsync(r => r.OfficeHourId == id && r.UserId == studentId && r.Status == 1);
+
+            if (reservation == null)
+                return NotFound(new { message = "Prijava ne obstaja" });
+
+            reservation.Status = 2; // Preklicano
+            await _context.SaveChangesAsync();
+
+            var updated = await _context.OfficeHours
+                .Include(o => o.Uporabnik)
+                .Include(o => o.Predmet)
+                .Include(o => o.Rezervacije)
+                .FirstOrDefaultAsync(o => o.Id == id);
+
+            return Ok(updated);
+        }
         // ========== POMOŽNE FUNKCIJE ==========
         private string GetRoleName(int roleId)
         {
