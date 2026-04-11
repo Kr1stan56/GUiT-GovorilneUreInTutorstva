@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="..\build\TutoringSystem.Server.props" />
-</Project>
