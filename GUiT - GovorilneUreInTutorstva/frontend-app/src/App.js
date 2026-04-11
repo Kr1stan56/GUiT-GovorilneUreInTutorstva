@@ -25,28 +25,27 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Rating,
   Alert,
   Snackbar,
   CircularProgress,
   Paper,
-IconButton
+  Tab,
+  Tabs,
+  IconButton
 } from '@mui/material';
 import {
-  School as SchoolIcon,
   Person as PersonIcon,
   EventNote as EventIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Dashboard as DashboardIcon,
-  Book as BookIcon,
   Logout as LogoutIcon,
+  Login as LoginIcon,
   Add as AddIcon,
-  Login as LoginIcon
+  PersonAdd as PersonAddIcon
 } from '@mui/icons-material';
 
-// API BASE URL - prilagodi glede na tvoj backend
-const API_BASE_URL = 'https://localhost:7101'; // ali http://localhost:5236
+// API BASE URL - spremeni glede na tvoj backend
+const API_BASE_URL = 'https://localhost:7101';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -55,29 +54,70 @@ function App() {
   const [tutors, setTutors] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [openOfficeDialog, setOpenOfficeDialog] = useState(false);
-  const [openTutorDialog, setOpenTutorDialog] = useState(false);
   const [openLoginDialog, setOpenLoginDialog] = useState(true);
   const [editingOffice, setEditingOffice] = useState(null);
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [anchorEl, setAnchorEl] = useState(null);
+  const [loginTab, setLoginTab] = useState(0);
+  
+  // Register form state
+  const [registerData, setRegisterData] = useState({
+    ime: '',
+    priimek: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    rolaId: 3
+  });
+
   const [newOfficeHour, setNewOfficeHour] = useState({
     zacetek: '',
     konec: '',
-    učilnica: '',
+    ucilnica: '',
     predmetId: ''
   });
 
-  // API klici
+  // API klici z boljšo obdelavo napak
   const api = {
     login: async (email, password) => {
       const response = await fetch(`${API_BASE_URL}/api/Tutoring/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ email, password })
       });
-      if (!response.ok) throw new Error('Prijava ni uspela');
+      
+      if (!response.ok) {
+        let errorMessage = 'Prijava ni uspela';
+        try {
+          const error = await response.json();
+          errorMessage = error.message || errorMessage;
+        } catch {
+          errorMessage = `Napaka: ${response.status}`;
+        }
+        throw new Error(errorMessage);
+      }
+      return response.json();
+    },
+
+    register: async (userData) => {
+      const response = await fetch(`${API_BASE_URL}/api/Tutoring/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(userData)
+      });
+      
+      if (!response.ok) {
+        let errorMessage = 'Registracija ni uspela';
+        try {
+          const error = await response.json();
+          errorMessage = error.message || errorMessage;
+        } catch {
+          errorMessage = `Napaka: ${response.status}`;
+        }
+        throw new Error(errorMessage);
+      }
       return response.json();
     },
 
@@ -128,11 +168,17 @@ function App() {
   };
 
   useEffect(() => {
-    // Preveri če je uporabnik že prijavljen (localStorage)
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
-      setUser(JSON.parse(savedUser));
-      loadData();
+      try {
+        const parsedUser = JSON.parse(savedUser);
+        setUser(parsedUser);
+        loadData();
+      } catch {
+        localStorage.removeItem('user');
+        setOpenLoginDialog(true);
+        setLoading(false);
+      }
     } else {
       setLoading(false);
       setOpenLoginDialog(true);
@@ -150,6 +196,7 @@ function App() {
       setTutors(tutorData);
       setSubjects(subjectData);
     } catch (error) {
+      console.error('Load data error:', error);
       showMessage(error.message, 'error');
     } finally {
       setLoading(false);
@@ -157,15 +204,73 @@ function App() {
   };
 
   const handleLogin = async () => {
+    if (!loginEmail || !loginPassword) {
+      showMessage('Vnesite email in geslo', 'error');
+      return;
+    }
+
     try {
       const userData = await api.login(loginEmail, loginPassword);
       setUser(userData);
       localStorage.setItem('user', JSON.stringify(userData));
       setOpenLoginDialog(false);
+      setLoginEmail('');
+      setLoginPassword('');
       await loadData();
       showMessage(`Dobrodošli, ${userData.name}!`, 'success');
     } catch (error) {
-      showMessage('Napačen email ali geslo', 'error');
+      showMessage(error.message, 'error');
+    }
+  };
+
+  const handleRegister = async () => {
+    if (!registerData.ime || !registerData.priimek) {
+      showMessage('Ime in priimek sta obvezna', 'error');
+      return;
+    }
+
+    if (!registerData.email || !registerData.email.includes('@')) {
+      showMessage('Vnesite veljaven email naslov', 'error');
+      return;
+    }
+
+    if (!registerData.password || registerData.password.length < 4) {
+      showMessage('Geslo mora imeti vsaj 4 znake', 'error');
+      return;
+    }
+
+    if (registerData.password !== registerData.confirmPassword) {
+      showMessage('Gesli se ne ujemata', 'error');
+      return;
+    }
+
+    try {
+      await api.register({
+        ime: registerData.ime,
+        priimek: registerData.priimek,
+        email: registerData.email,
+        password: registerData.password,
+        rolaId: registerData.rolaId
+      });
+
+      showMessage('Registracija uspešna! Zdaj se lahko prijavite.', 'success');
+      
+      // Počisti formo
+      setRegisterData({
+        ime: '',
+        priimek: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        rolaId: 3
+      });
+      
+      // Preklopi na prijavo
+      setLoginTab(0);
+      setLoginEmail(registerData.email);
+      
+    } catch (error) {
+      showMessage(error.message, 'error');
     }
   };
 
@@ -177,18 +282,23 @@ function App() {
   };
 
   const handleCreateOfficeHour = async () => {
+    if (!newOfficeHour.zacetek || !newOfficeHour.ucilnica) {
+      showMessage('Izpolnite vsa obvezna polja', 'error');
+      return;
+    }
+
     try {
       const newOffice = {
         zacetek: newOfficeHour.zacetek,
         konec: newOfficeHour.konec || null,
-        učilnica: parseInt(newOfficeHour.učilnica),
+        ucilnica: parseInt(newOfficeHour.ucilnica),
         uporabnikId: user.id,
         predmetId: newOfficeHour.predmetId ? parseInt(newOfficeHour.predmetId) : null
       };
       const created = await api.createOfficeHour(newOffice);
       setOfficeHours([...officeHours, created]);
       setOpenOfficeDialog(false);
-      setNewOfficeHour({ zacetek: '', konec: '', učilnica: '', predmetId: '' });
+      setNewOfficeHour({ zacetek: '', konec: '', ucilnica: '', predmetId: '' });
       showMessage('Govorilna ura uspešno dodana!', 'success');
     } catch (error) {
       showMessage(error.message, 'error');
@@ -229,7 +339,8 @@ function App() {
   };
 
   const getRoleColor = () => {
-    switch (getRoleLabel(user?.roleId)) {
+    const role = getRoleLabel(user?.roleId);
+    switch (role) {
       case 'admin': return '#f44336';
       case 'professor': return '#2196f3';
       case 'tutor': return '#4caf50';
@@ -271,7 +382,7 @@ function App() {
                 <TableRow key={oh.id}>
                   <TableCell>{oh.predmet?.naziv || 'Ni določen'}</TableCell>
                   <TableCell>{oh.uporabnik?.ime} {oh.uporabnik?.priimek}</TableCell>
-                  <TableCell>{oh.učilnica}</TableCell>
+                  <TableCell>{oh.ucilnica}</TableCell>
                   <TableCell>{new Date(oh.zacetek).toLocaleString()}</TableCell>
                   <TableCell>
                     <IconButton color="error" onClick={() => handleDeleteOfficeHour(oh.id)}>
@@ -305,8 +416,7 @@ function App() {
               <CardContent>
                 <Typography variant="h6">{oh.predmet?.naziv || 'Brez predmeta'}</Typography>
                 <Typography>📅 {new Date(oh.zacetek).toLocaleString()}</Typography>
-                <Typography>📍 Učilnica: {oh.učilnica}</Typography>
-                <Typography>👥 Prijavljenih: {oh.rezervacije?.filter(r => r.status === 1).length || 0}</Typography>
+                <Typography>📍 Učilnica: {oh.ucilnica}</Typography>
               </CardContent>
               <CardActions>
                 <Button size="small" startIcon={<EditIcon />} onClick={() => { setEditingOffice(oh); setOpenOfficeDialog(true); }}>
@@ -335,8 +445,7 @@ function App() {
                 <Typography variant="h6">{oh.predmet?.naziv || 'Brez predmeta'}</Typography>
                 <Typography color="textSecondary">{oh.uporabnik?.ime} {oh.uporabnik?.priimek}</Typography>
                 <Typography>📅 {new Date(oh.zacetek).toLocaleString()}</Typography>
-                <Typography>📍 Učilnica: {oh.učilnica}</Typography>
-                <Chip label={`Prostih: ${10 - (oh.rezervacije?.filter(r => r.status === 1).length || 0)}`} color="success" size="small" sx={{ mt: 1 }} />
+                <Typography>📍 Učilnica: {oh.ucilnica}</Typography>
               </CardContent>
             </Card>
           </Grid>
@@ -349,8 +458,9 @@ function App() {
           <Grid item xs={12} md={4} key={tutor.id}>
             <Card>
               <CardContent>
-                <Typography variant="h6">{tutor.ime} {tutor.priimek}</Typography>
+                <Typography variant="h6">{tutor.name}</Typography>
                 <Typography variant="body2">{tutor.email}</Typography>
+                <Typography variant="body2" color="textSecondary">{tutor.subject}</Typography>
               </CardContent>
               <CardActions>
                 <Button fullWidth variant="outlined" href={`mailto:${tutor.email}`}>
@@ -411,36 +521,127 @@ function App() {
         {user ? renderDashboard() : null}
       </Container>
 
-      {/* Login Dialog */}
+      {/* Login/Register Dialog */}
       <Dialog open={openLoginDialog} onClose={() => {}} maxWidth="sm" fullWidth>
         <DialogTitle>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <LoginIcon /> Prijava v sistem
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <LoginIcon /> Prijava v sistem
+            </Box>
           </Box>
         </DialogTitle>
         <DialogContent>
-          <TextField
-            fullWidth
-            label="Email"
-            type="email"
-            margin="normal"
-            value={loginEmail}
-            onChange={(e) => setLoginEmail(e.target.value)}
-          />
-          <TextField
-            fullWidth
-            label="Geslo"
-            type="password"
-            margin="normal"
-            value={loginPassword}
-            onChange={(e) => setLoginPassword(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
-          />
+          <Tabs value={loginTab} onChange={(e, v) => setLoginTab(v)} sx={{ mb: 2 }}>
+            <Tab label="Prijava" />
+            <Tab label="Registracija" />
+          </Tabs>
+          
+          {loginTab === 0 ? (
+            <>
+              <TextField
+                fullWidth
+                label="Email"
+                type="email"
+                margin="normal"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+              />
+              <TextField
+                fullWidth
+                label="Geslo"
+                type="password"
+                margin="normal"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+              />
+              <Button
+                fullWidth
+                variant="text"
+                sx={{ mt: 1 }}
+                onClick={() => {
+                  setLoginTab(1);
+                }}
+              >
+                Nimate računa? Registrirajte se
+              </Button>
+            </>
+          ) : (
+            <>
+              <TextField
+                fullWidth
+                label="Ime"
+                margin="normal"
+                value={registerData.ime}
+                onChange={(e) => setRegisterData({ ...registerData, ime: e.target.value })}
+              />
+              <TextField
+                fullWidth
+                label="Priimek"
+                margin="normal"
+                value={registerData.priimek}
+                onChange={(e) => setRegisterData({ ...registerData, priimek: e.target.value })}
+              />
+              <TextField
+                fullWidth
+                label="Email"
+                type="email"
+                margin="normal"
+                value={registerData.email}
+                onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
+              />
+              <TextField
+                fullWidth
+                label="Geslo"
+                type="password"
+                margin="normal"
+                value={registerData.password}
+                onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
+                helperText="Geslo mora imeti vsaj 4 znake"
+              />
+              <TextField
+                fullWidth
+                label="Ponovi geslo"
+                type="password"
+                margin="normal"
+                value={registerData.confirmPassword}
+                onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
+              />
+              <TextField
+                fullWidth
+                select
+                label="Vloga"
+                margin="normal"
+                SelectProps={{ native: true }}
+                value={registerData.rolaId}
+                onChange={(e) => setRegisterData({ ...registerData, rolaId: parseInt(e.target.value) })}
+              >
+                <option value={3}>Študent</option>
+                <option value={2}>Tutor</option>
+                <option value={4}>Profesor</option>
+              </TextField>
+              <Button
+                fullWidth
+                variant="text"
+                sx={{ mt: 1 }}
+                onClick={() => setLoginTab(0)}
+              >
+                Že imate račun? Prijavite se
+              </Button>
+            </>
+          )}
         </DialogContent>
         <DialogActions>
-          <Button variant="contained" onClick={handleLogin} fullWidth>
-            Prijava
-          </Button>
+          {loginTab === 0 ? (
+            <Button variant="contained" onClick={handleLogin} fullWidth>
+              Prijava
+            </Button>
+          ) : (
+            <Button variant="contained" onClick={handleRegister} fullWidth>
+              Registracija
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
 
@@ -477,10 +678,10 @@ function App() {
             type="number"
             label="Učilnica"
             margin="normal"
-            value={editingOffice ? editingOffice.učilnica : newOfficeHour.učilnica}
+            value={editingOffice ? editingOffice.ucilnica : newOfficeHour.ucilnica}
             onChange={(e) => editingOffice
-              ? setEditingOffice({ ...editingOffice, učilnica: parseInt(e.target.value) })
-              : setNewOfficeHour({ ...newOfficeHour, učilnica: e.target.value })
+              ? setEditingOffice({ ...editingOffice, ucilnica: parseInt(e.target.value) })
+              : setNewOfficeHour({ ...newOfficeHour, ucilnica: e.target.value })
             }
           />
           <TextField

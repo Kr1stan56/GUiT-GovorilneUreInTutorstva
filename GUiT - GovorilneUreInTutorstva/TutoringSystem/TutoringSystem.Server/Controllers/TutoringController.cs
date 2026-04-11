@@ -432,6 +432,7 @@ namespace StudentskaSluzba.Controllers
                 _ => "student"
             };
         }
+
     }
 
     // Model za prijavo
