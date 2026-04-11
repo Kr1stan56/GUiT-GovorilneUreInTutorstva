@@ -4,25 +4,28 @@ using System.Text.Json.Serialization;
 
 namespace StudentskaSluzba.Models
 {
-    [Table("tutor_predmeti")]
-    public class Tutor
+    [Table("rezervacije_govorilne")]
+    public class Reservation
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
 
         [Required]
-        [Column("predmet_id")]
-        public int PredmetId { get; set; }
+        public int Status { get; set; }
 
         [Required]
-        [Column("Uporabniki_id")]
+        [Column("Uporabnik_id")]
         public int UserId { get; set; }
 
-        [ForeignKey("PredmetId")]
-        public virtual Subject? Predmet { get; set; }
+        [Required]
+        [Column("govorilna_ura_id")]
+        public int OfficeHourId { get; set; }
 
         [ForeignKey("UserId")]
         public virtual User? Uporabnik { get; set; }
+
+        [ForeignKey("OfficeHourId")]
+        public virtual OfficeHour? GovorilnaUra { get; set; }
     }
 }

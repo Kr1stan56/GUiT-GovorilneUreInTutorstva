@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using TutoringSystem.Server.Models;
+using StudentskaSluzba.Models;
 
-namespace TutoringSystem.Server.Data
+namespace StudentskaSluzba.Data
 {
     public class ApplicationDbContext : DbContext
     {
@@ -21,40 +21,12 @@ namespace TutoringSystem.Server.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Unikatni email
-            modelBuilder.Entity<User>()
-                .HasIndex(u => u.Email)
-                .IsUnique();
-
-            // Unikatna kombinacija za Tutor
-            modelBuilder.Entity<Tutor>()
-                .HasIndex(t => new { t.UserId, t.PredmetId })
-                .IsUnique();
-
-            // Relacije
-            modelBuilder.Entity<Tutor>()
-                .HasOne(t => t.Uporabnik)
-                .WithMany(u => u.TutorPredmeti)
-                .HasForeignKey(t => t.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<Tutor>()
-                .HasOne(t => t.Predmet)
-                .WithMany(p => p.Tutorji)
-                .HasForeignKey(t => t.PredmetId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<OfficeHour>()
-                .HasOne(o => o.Uporabnik)
-                .WithMany(u => u.GovorilneUre)
-                .HasForeignKey(o => o.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Reservation>()
-                .HasOne(r => r.Uporabnik)
-                .WithMany(u => u.Rezervacije)
-                .HasForeignKey(r => r.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<User>().ToTable("Uporabniki");
+            modelBuilder.Entity<Rola>().ToTable("role");
+            modelBuilder.Entity<Subject>().ToTable("predmeti");
+            modelBuilder.Entity<Tutor>().ToTable("tutor_predmeti");
+            modelBuilder.Entity<OfficeHour>().ToTable("govorilne_ure");
+            modelBuilder.Entity<Reservation>().ToTable("rezervacije_govorilne");
         }
     }
 }

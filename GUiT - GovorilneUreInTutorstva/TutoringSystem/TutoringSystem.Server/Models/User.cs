@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
-namespace TutoringSystem.Server.Models
+namespace StudentskaSluzba.Models
 {
     [Table("Uporabniki")]
     public class User
@@ -32,33 +32,16 @@ namespace TutoringSystem.Server.Models
         [ForeignKey("RolaId")]
         public virtual Rola? Rola { get; set; }
 
-        [JsonIgnore]
-        public virtual ICollection<Tutor> TutorPredmeti { get; set; } = new List<Tutor>();
-
-        [JsonIgnore]
-        public virtual ICollection<OfficeHour> GovorilneUre { get; set; } = new List<OfficeHour>();
-
-        [JsonIgnore]
-        public virtual ICollection<Reservation> Rezervacije { get; set; } = new List<Reservation>();
-
         [NotMapped]
         public string PolnoIme => $"{Ime} {Priimek}";
-    }
-
-    [Table("role")]
-    public class Rola
-    {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int Id { get; set; }
-
-        [Required]
-        public int Naziv { get; set; }
-
-        [Required]
-        public string Opis { get; set; } = string.Empty;
 
         [JsonIgnore]
-        public virtual ICollection<User> Uporabniki { get; set; } = new List<User>();
+        public virtual ICollection<Tutor>? TutorPredmeti { get; set; }
+
+        [JsonIgnore]
+        public virtual ICollection<OfficeHour>? GovorilneUre { get; set; }
+
+        [JsonIgnore]
+        public virtual ICollection<Reservation>? Rezervacije { get; set; }
     }
 }
