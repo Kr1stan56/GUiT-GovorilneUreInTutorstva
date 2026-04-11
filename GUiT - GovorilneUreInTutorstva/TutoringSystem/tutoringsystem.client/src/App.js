@@ -25,24 +25,28 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Rating,
   Alert,
   Snackbar,
   CircularProgress,
   Paper,
-  IconButton
+IconButton
 } from '@mui/material';
 import {
+  School as SchoolIcon,
   Person as PersonIcon,
   EventNote as EventIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
+  Dashboard as DashboardIcon,
+  Book as BookIcon,
   Logout as LogoutIcon,
   Add as AddIcon,
   Login as LoginIcon
 } from '@mui/icons-material';
 
-// API BASE URL
-const API_BASE_URL = 'http://localhost:5236';
+// API BASE URL - prilagodi glede na tvoj backend
+const API_BASE_URL = 'https://localhost:7101'; // ali http://localhost:5236
 
 function App() {
   const [user, setUser] = useState(null);
@@ -51,6 +55,7 @@ function App() {
   const [tutors, setTutors] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [openOfficeDialog, setOpenOfficeDialog] = useState(false);
+  const [openTutorDialog, setOpenTutorDialog] = useState(false);
   const [openLoginDialog, setOpenLoginDialog] = useState(true);
   const [editingOffice, setEditingOffice] = useState(null);
   const [loginEmail, setLoginEmail] = useState('');
@@ -123,6 +128,7 @@ function App() {
   };
 
   useEffect(() => {
+    // Preveri če je uporabnik že prijavljen (localStorage)
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
       setUser(JSON.parse(savedUser));
@@ -293,13 +299,14 @@ function App() {
         Dodaj govorilno uro
       </Button>
       <Grid container spacing={3}>
-        {officeHours.filter(oh => oh.uporabnik?.id === user?.id).map(oh => (
+        {officeHours.filter(oh => oh.uporabnik?.id === user.id).map(oh => (
           <Grid item xs={12} md={6} key={oh.id}>
             <Card>
               <CardContent>
                 <Typography variant="h6">{oh.predmet?.naziv || 'Brez predmeta'}</Typography>
                 <Typography>📅 {new Date(oh.zacetek).toLocaleString()}</Typography>
                 <Typography>📍 Učilnica: {oh.učilnica}</Typography>
+                <Typography>👥 Prijavljenih: {oh.rezervacije?.filter(r => r.status === 1).length || 0}</Typography>
               </CardContent>
               <CardActions>
                 <Button size="small" startIcon={<EditIcon />} onClick={() => { setEditingOffice(oh); setOpenOfficeDialog(true); }}>
@@ -329,6 +336,7 @@ function App() {
                 <Typography color="textSecondary">{oh.uporabnik?.ime} {oh.uporabnik?.priimek}</Typography>
                 <Typography>📅 {new Date(oh.zacetek).toLocaleString()}</Typography>
                 <Typography>📍 Učilnica: {oh.učilnica}</Typography>
+                <Chip label={`Prostih: ${10 - (oh.rezervacije?.filter(r => r.status === 1).length || 0)}`} color="success" size="small" sx={{ mt: 1 }} />
               </CardContent>
             </Card>
           </Grid>
