@@ -103,3 +103,4 @@ C:\xampp\htdocs\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\Tuto
 C:\xampp\htdocs\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\obj\Debug\net8.0\TutoringSystem.Server.pdb
 C:\xampp\htdocs\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\obj\Debug\net8.0\TutoringSystem.Server.genruntimeconfig.cache
 C:\xampp\htdocs\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\obj\Debug\net8.0\ref\TutoringSystem.Server.dll
+C:\xampp\htdocs\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\bin\Debug\net8.0\BCrypt.Net-Next.dll
