@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using TutoringSystem.Server.Data;
+using StudentskaSluzba.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,10 +7,11 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Uporabi connection string iz appsettings.json
+// Dodaj DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// Dodaj CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
