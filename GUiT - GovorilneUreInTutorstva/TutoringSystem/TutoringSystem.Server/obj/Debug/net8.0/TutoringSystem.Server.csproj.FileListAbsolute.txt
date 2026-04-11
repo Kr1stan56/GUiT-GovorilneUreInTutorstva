@@ -34,3 +34,39 @@ C:\xampp\htdocs\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\Tuto
 C:\xampp\htdocs\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\obj\Debug\net8.0\TutoringSystem.Server.pdb
 C:\xampp\htdocs\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\obj\Debug\net8.0\TutoringSystem.Server.genruntimeconfig.cache
 C:\xampp\htdocs\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\obj\Debug\net8.0\ref\TutoringSystem.Server.dll
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\bin\Debug\net8.0\appsettings.Development.json
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\bin\Debug\net8.0\appsettings.json
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\bin\Debug\net8.0\spa.proxy.json
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\bin\Debug\net8.0\TutoringSystem.Server.exe
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\bin\Debug\net8.0\TutoringSystem.Server.deps.json
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\bin\Debug\net8.0\TutoringSystem.Server.runtimeconfig.json
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\bin\Debug\net8.0\TutoringSystem.Server.dll
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\bin\Debug\net8.0\TutoringSystem.Server.pdb
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\bin\Debug\net8.0\Microsoft.AspNetCore.SpaProxy.dll
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\bin\Debug\net8.0\Microsoft.OpenApi.dll
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\bin\Debug\net8.0\Swashbuckle.AspNetCore.Swagger.dll
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerUI.dll
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\obj\Debug\net8.0\TutoringSystem.Server.csproj.AssemblyReference.cache
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\obj\Debug\net8.0\spa.proxy.json
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\obj\Debug\net8.0\TutoringSystem.Server.GeneratedMSBuildEditorConfig.editorconfig
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\obj\Debug\net8.0\TutoringSystem.Server.AssemblyInfoInputs.cache
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\obj\Debug\net8.0\TutoringSystem.Server.AssemblyInfo.cs
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\obj\Debug\net8.0\TutoringSystem.Server.csproj.CoreCompileInputs.cache
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\obj\Debug\net8.0\TutoringSystem.Server.MvcApplicationPartsAssemblyInfo.cs
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\obj\Debug\net8.0\TutoringSystem.Server.MvcApplicationPartsAssemblyInfo.cache
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\obj\Debug\net8.0\TutoringSystem.Server.sourcelink.json
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\obj\Debug\net8.0\staticwebassets.build.json
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\obj\Debug\net8.0\staticwebassets.development.json
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\obj\Debug\net8.0\staticwebassets\msbuild.TutoringSystem.Server.Microsoft.AspNetCore.StaticWebAssets.props
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\obj\Debug\net8.0\staticwebassets\msbuild.build.TutoringSystem.Server.props
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\obj\Debug\net8.0\staticwebassets\msbuild.buildMultiTargeting.TutoringSystem.Server.props
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\obj\Debug\net8.0\staticwebassets\msbuild.buildTransitive.TutoringSystem.Server.props
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\obj\Debug\net8.0\staticwebassets.pack.json
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\obj\Debug\net8.0\scopedcss\bundle\TutoringSystem.Server.styles.css
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\obj\Debug\net8.0\Tutoring.49E6C09C.Up2Date
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\obj\Debug\net8.0\TutoringSystem.Server.dll
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\obj\Debug\net8.0\refint\TutoringSystem.Server.dll
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\obj\Debug\net8.0\TutoringSystem.Server.pdb
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\obj\Debug\net8.0\TutoringSystem.Server.genruntimeconfig.cache
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\TutoringSystem.Server\obj\Debug\net8.0\ref\TutoringSystem.Server.dll

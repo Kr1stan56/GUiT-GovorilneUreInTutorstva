@@ -3,7 +3,7 @@
 "ServerUrl": "https://localhost:5173",
 "RedirectUrl": "",
 "LaunchCommand": "npm run dev",
-"WorkingDirectory": "C:\\xampp\\htdocs\\GUiT-GovorilneUreInTutorstva\\GUiT - GovorilneUreInTutorstva\\TutoringSystem\\TutoringSystem.Server\\..\\tutoringsystem.client",
+"WorkingDirectory": "C:\\Spletna rezervacija govorilnih ur in tutorstva\\GUiT-GovorilneUreInTutorstva\\GUiT - GovorilneUreInTutorstva\\TutoringSystem\\TutoringSystem.Server\\..\\tutoringsystem.client",
 "MaxTimeoutInSeconds": "120",
 "KeepRunning": "false"
 }

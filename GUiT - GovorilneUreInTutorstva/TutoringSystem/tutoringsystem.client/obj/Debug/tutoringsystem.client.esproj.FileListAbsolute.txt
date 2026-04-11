@@ -1,1 +1,2 @@
 C:\xampp\htdocs\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\tutoringsystem.client\obj\Debug\tutoringsystem.client.esproj.CoreCompileInputs.cache
+C:\Spletna rezervacija govorilnih ur in tutorstva\GUiT-GovorilneUreInTutorstva\GUiT - GovorilneUreInTutorstva\TutoringSystem\tutoringsystem.client\obj\Debug\tutoringsystem.client.esproj.CoreCompileInputs.cache
