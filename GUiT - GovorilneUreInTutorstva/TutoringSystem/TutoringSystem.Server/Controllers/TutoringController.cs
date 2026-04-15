@@ -17,50 +17,57 @@ namespace StudentskaSluzba.Controllers
             _context = context;
         }
 
-        // TEST endpoint
+        // TEST ENDPOINT
         [HttpGet("test")]
         public IActionResult Test()
         {
             return Ok(new { message = "Backend dela!", timestamp = DateTime.Now });
         }
 
-        // ========== REGISTRACIJA ==========
+        // TEST BAZE
+        [HttpGet("test-db-connection")]
+        public async Task<IActionResult> TestDbConnection()
+        {
+            try
+            {
+                var userCount = await _context.Users.CountAsync();
+                return Ok(new { success = true, message = "Baza deluje!", userCount = userCount, timestamp = DateTime.Now });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = ex.Message });
+            }
+        }
+
+        // REGISTRACIJA
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
             try
             {
-                // Preveri èe email že obstaja
-                var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
-                if (existingUser != null)
-                {
+                if (await _context.Users.AnyAsync(u => u.email == request.Email))
                     return BadRequest(new { message = "Email že obstaja v sistemu" });
-                }
 
-                // Hashiraj geslo
-                string hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
-
-                // Ustvari novega uporabnika
-                var newUser = new User
+                var user = new User
                 {
-                    Ime = request.Ime,
-                    Priimek = request.Priimek,
-                    Email = request.Email,
-                    GesloHash = hashedPassword,
-                    RolaId = request.RolaId
+                    ime = request.Ime,
+                    priimek = request.Priimek,
+                    email = request.Email,
+                    geslo_hash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                    rola_id = request.RolaId
                 };
 
-                _context.Users.Add(newUser);
+                _context.Users.Add(user);
                 await _context.SaveChangesAsync();
 
                 return Ok(new
                 {
                     message = "Uporabnik uspešno registriran!",
-                    id = newUser.Id,
-                    name = $"{newUser.Ime} {newUser.Priimek}",
-                    email = newUser.Email,
-                    roleId = newUser.RolaId,
-                    role = GetRoleName(newUser.RolaId)
+                    id = user.id,
+                    name = $"{user.ime} {user.priimek}",
+                    email = user.email,
+                    roleId = user.rola_id,
+                    role = GetRoleName(user.rola_id)
                 });
             }
             catch (Exception ex)
@@ -69,61 +76,30 @@ namespace StudentskaSluzba.Controllers
             }
         }
 
-        // ========== PRIJAVA (LOGIN) ==========
+        // PRIJAVA (LOGIN)
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             try
             {
-                Console.WriteLine($"Login attempt: {request.Email}");
-
-                // Poišèi uporabnika po emailu
                 var user = await _context.Users
                     .Include(u => u.Rola)
-                    .FirstOrDefaultAsync(u => u.Email == request.Email);
+                    .FirstOrDefaultAsync(u => u.email == request.Email);
 
                 if (user == null)
-                {
                     return Unauthorized(new { message = "Email ali geslo je napaèen" });
-                }
 
-                // Preveri geslo
-                bool passwordValid = false;
-
-                // Poskusi BCrypt verifikacijo
-                try
-                {
-                    if (BCrypt.Net.BCrypt.Verify(request.Password, user.GesloHash))
-                    {
-                        passwordValid = true;
-                    }
-                }
-                catch { }
-
-                // Èe BCrypt ne deluje, poskusi direktno primerjavo
-                if (!passwordValid && user.GesloHash == request.Password)
-                {
-                    passwordValid = true;
-                }
-
-                // ZA TESTIRANJE - èe uporabnik vnese "password123"
-                if (!passwordValid && request.Password == "password123")
-                {
-                    passwordValid = true;
-                }
-
+                bool passwordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.geslo_hash);
                 if (!passwordValid)
-                {
                     return Unauthorized(new { message = "Email ali geslo je napaèen" });
-                }
 
                 return Ok(new
                 {
-                    id = user.Id,
-                    name = $"{user.Ime} {user.Priimek}",
-                    email = user.Email,
-                    roleId = user.RolaId,
-                    role = GetRoleName(user.RolaId),
+                    id = user.id,
+                    name = $"{user.ime} {user.priimek}",
+                    email = user.email,
+                    roleId = user.rola_id,
+                    role = GetRoleName(user.rola_id),
                     token = "token-" + Guid.NewGuid().ToString()
                 });
             }
@@ -133,31 +109,7 @@ namespace StudentskaSluzba.Controllers
             }
         }
 
-        // ========== TEST BAZE ==========
-        [HttpGet("test-db")]
-        public async Task<IActionResult> TestDatabase()
-        {
-            try
-            {
-                var userCount = await _context.Users.CountAsync();
-                var roleCount = await _context.Roles.CountAsync();
-                var subjectCount = await _context.Subjects.CountAsync();
-
-                return Ok(new
-                {
-                    message = "Baza dela!",
-                    users = userCount,
-                    roles = roleCount,
-                    subjects = subjectCount
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { error = ex.Message, stack = ex.StackTrace });
-            }
-        }
-
-        // ========== GOVORILNE URE ==========
+        // GOVORILNE URE
         [HttpGet("officehours")]
         public async Task<IActionResult> GetOfficeHours()
         {
@@ -167,7 +119,7 @@ namespace StudentskaSluzba.Controllers
                     .Include(o => o.Uporabnik)
                     .Include(o => o.Predmet)
                     .Include(o => o.Rezervacije)
-                    .OrderBy(o => o.Zacetek)
+                    .OrderBy(o => o.zacetek)
                     .ToListAsync();
                 return Ok(officeHours);
             }
@@ -186,11 +138,9 @@ namespace StudentskaSluzba.Controllers
                     .Include(o => o.Uporabnik)
                     .Include(o => o.Predmet)
                     .Include(o => o.Rezervacije)
-                    .FirstOrDefaultAsync(o => o.Id == id);
-
+                    .FirstOrDefaultAsync(o => o.id == id);
                 if (officeHour == null)
                     return NotFound(new { message = "Govorilna ura ne obstaja" });
-
                 return Ok(officeHour);
             }
             catch (Exception ex)
@@ -204,7 +154,7 @@ namespace StudentskaSluzba.Controllers
         {
             try
             {
-                if (officeHour.Zacetek < DateTime.Now)
+                if (officeHour.zacetek < DateTime.Now)
                     return BadRequest(new { message = "Zaèetek ne more biti v preteklosti" });
 
                 _context.OfficeHours.Add(officeHour);
@@ -213,8 +163,7 @@ namespace StudentskaSluzba.Controllers
                 var created = await _context.OfficeHours
                     .Include(o => o.Uporabnik)
                     .Include(o => o.Predmet)
-                    .FirstOrDefaultAsync(o => o.Id == officeHour.Id);
-
+                    .FirstOrDefaultAsync(o => o.id == officeHour.id);
                 return Ok(created);
             }
             catch (Exception ex)
@@ -232,18 +181,18 @@ namespace StudentskaSluzba.Controllers
                 if (existing == null)
                     return NotFound(new { message = "Govorilna ura ne obstaja" });
 
-                existing.Zacetek = officeHour.Zacetek;
-                existing.Konec = officeHour.Konec;
-                existing.Uèilnica = officeHour.Uèilnica;
-                existing.PredmetId = officeHour.PredmetId;
+                existing.zacetek = officeHour.zacetek;
+                existing.konec = officeHour.konec;
+                existing.uèilnica = officeHour.uèilnica;
+                existing.predmet_id = officeHour.predmet_id;
+                existing.komentar_ucitelja = officeHour.komentar_ucitelja;
 
                 await _context.SaveChangesAsync();
 
                 var updated = await _context.OfficeHours
                     .Include(o => o.Uporabnik)
                     .Include(o => o.Predmet)
-                    .FirstOrDefaultAsync(o => o.Id == id);
-
+                    .FirstOrDefaultAsync(o => o.id == id);
                 return Ok(updated);
             }
             catch (Exception ex)
@@ -259,12 +208,11 @@ namespace StudentskaSluzba.Controllers
             {
                 var officeHour = await _context.OfficeHours
                     .Include(o => o.Rezervacije)
-                    .FirstOrDefaultAsync(o => o.Id == id);
-
+                    .FirstOrDefaultAsync(o => o.id == id);
                 if (officeHour == null)
                     return NotFound(new { message = "Govorilna ura ne obstaja" });
 
-                var hasConfirmedReservations = officeHour.Rezervacije?.Any(r => r.Status == 1) ?? false;
+                var hasConfirmedReservations = officeHour.Rezervacije?.Any(r => r.status == 1) ?? false;
                 if (hasConfirmedReservations)
                     return BadRequest(new { message = "Ne moreš izbrisati govorilne ure, ker ima potrjene rezervacije" });
 
@@ -278,7 +226,7 @@ namespace StudentskaSluzba.Controllers
             }
         }
 
-        // ========== REZERVACIJE ==========
+        // REZERVACIJE
         [HttpPost("reservations")]
         public async Task<IActionResult> CreateReservation([FromBody] CreateReservationRequest request)
         {
@@ -286,35 +234,29 @@ namespace StudentskaSluzba.Controllers
             {
                 var officeHour = await _context.OfficeHours
                     .Include(o => o.Rezervacije)
-                    .FirstOrDefaultAsync(o => o.Id == request.OfficeHourId);
-
+                    .FirstOrDefaultAsync(o => o.id == request.OfficeHourId);
                 if (officeHour == null)
                     return NotFound(new { message = "Govorilna ura ne obstaja" });
-
-                if (officeHour.Zacetek < DateTime.Now)
+                if (officeHour.zacetek < DateTime.Now)
                     return BadRequest(new { message = "Ne moreš rezervirati preteklega termina" });
 
-                var alreadyReserved = officeHour.Rezervacije?
-                    .Any(r => r.UserId == request.UserId && r.Status != 2) ?? false;
-
+                var alreadyReserved = officeHour.Rezervacije?.Any(r => r.Uporabnik_id == request.UserId && r.status != 2) ?? false;
                 if (alreadyReserved)
                     return BadRequest(new { message = "Že imaš rezervacijo za ta termin" });
 
-                var confirmedCount = officeHour.Rezervacije?.Count(r => r.Status == 1) ?? 0;
+                var confirmedCount = officeHour.Rezervacije?.Count(r => r.status == 1) ?? 0;
                 if (confirmedCount >= 10)
                     return BadRequest(new { message = "Ni veè prostih mest" });
 
                 var reservation = new Reservation
                 {
-                    UserId = request.UserId,
-                    OfficeHourId = request.OfficeHourId,
-                    Status = 0
+                    Uporabnik_id = request.UserId,
+                    govorilna_ura_id = request.OfficeHourId,
+                    status = 0
                 };
-
                 _context.Reservations.Add(reservation);
                 await _context.SaveChangesAsync();
-
-                return Ok(new { message = "Rezervacija ustvarjena", id = reservation.Id });
+                return Ok(new { message = "Rezervacija ustvarjena", id = reservation.id });
             }
             catch (Exception ex)
             {
@@ -330,10 +272,8 @@ namespace StudentskaSluzba.Controllers
                 var reservation = await _context.Reservations.FindAsync(id);
                 if (reservation == null)
                     return NotFound(new { message = "Rezervacija ne obstaja" });
-
-                reservation.Status = status;
+                reservation.status = status;
                 await _context.SaveChangesAsync();
-
                 string statusMessage = status switch
                 {
                     0 => "Rezervacija èaka na potrditev",
@@ -342,7 +282,6 @@ namespace StudentskaSluzba.Controllers
                     3 => "Rezervacija opravljena",
                     _ => "Status posodobljen"
                 };
-
                 return Ok(new { message = statusMessage });
             }
             catch (Exception ex)
@@ -359,7 +298,6 @@ namespace StudentskaSluzba.Controllers
                 var reservation = await _context.Reservations.FindAsync(id);
                 if (reservation == null)
                     return NotFound(new { message = "Rezervacija ne obstaja" });
-
                 _context.Reservations.Remove(reservation);
                 await _context.SaveChangesAsync();
                 return Ok(new { message = "Rezervacija izbrisana" });
@@ -370,25 +308,25 @@ namespace StudentskaSluzba.Controllers
             }
         }
 
-        // ========== TUTORJI ==========
+        // TUTORJI
         [HttpGet("tutors")]
         public async Task<IActionResult> GetTutors()
         {
             try
             {
                 var tutors = await _context.Users
-                    .Where(u => u.RolaId == 2 || u.RolaId == 4)
+                    .Where(u => u.rola_id == 2 || u.rola_id == 4)
                     .Select(u => new
                     {
-                        u.Id,
-                        u.Ime,
-                        u.Priimek,
-                        name = $"{u.Ime} {u.Priimek}",
-                        u.Email,
-                        roleId = u.RolaId,
-                        role = u.RolaId == 2 ? "tutor" : "professor",
+                        u.id,
+                        u.ime,
+                        u.priimek,
+                        name = $"{u.ime} {u.priimek}",
+                        u.email,
+                        roleId = u.rola_id,
+                        role = u.rola_id == 2 ? "tutor" : "professor",
                         subject = "Razlièni predmeti",
-                        description = u.RolaId == 2 ? "Pomoè pri uèenju" : "Predavanja in konzultacije",
+                        description = u.rola_id == 2 ? "Pomoè pri uèenju" : "Predavanja in konzultacije",
                         price = 15,
                         rating = 4.5,
                         reviews = 10
@@ -410,19 +348,17 @@ namespace StudentskaSluzba.Controllers
                 var user = await _context.Users
                     .Include(u => u.TutorPredmeti)
                         .ThenInclude(t => t.Predmet)
-                    .FirstOrDefaultAsync(u => u.Id == id && (u.RolaId == 2 || u.RolaId == 4));
-
+                    .FirstOrDefaultAsync(u => u.id == id && (u.rola_id == 2 || u.rola_id == 4));
                 if (user == null)
                     return NotFound(new { message = "Tutor ne obstaja" });
-
                 return Ok(new
                 {
-                    user.Id,
-                    user.Ime,
-                    user.Priimek,
-                    user.Email,
-                    roleId = user.RolaId,
-                    subjects = user.TutorPredmeti?.Select(t => t.Predmet?.Naziv).ToList() ?? new List<string>()
+                    user.id,
+                    user.ime,
+                    user.priimek,
+                    user.email,
+                    roleId = user.rola_id,
+                    subjects = user.TutorPredmeti?.Select(t => t.Predmet?.naziv).ToList() ?? new List<string>()
                 });
             }
             catch (Exception ex)
@@ -431,7 +367,7 @@ namespace StudentskaSluzba.Controllers
             }
         }
 
-        // ========== PREDMETI ==========
+        // PREDMETI
         [HttpGet("subjects")]
         public async Task<IActionResult> GetSubjects()
         {
@@ -454,11 +390,9 @@ namespace StudentskaSluzba.Controllers
                 var subject = await _context.Subjects
                     .Include(s => s.Tutorji)
                         .ThenInclude(t => t.Uporabnik)
-                    .FirstOrDefaultAsync(s => s.Id == id);
-
+                    .FirstOrDefaultAsync(s => s.id == id);
                 if (subject == null)
                     return NotFound(new { message = "Predmet ne obstaja" });
-
                 return Ok(subject);
             }
             catch (Exception ex)
@@ -467,7 +401,7 @@ namespace StudentskaSluzba.Controllers
             }
         }
 
-        // ========== UPORABNIKI ==========
+        // UPORABNIKI
         [HttpGet("users")]
         public async Task<IActionResult> GetUsers()
         {
@@ -477,12 +411,12 @@ namespace StudentskaSluzba.Controllers
                     .Include(u => u.Rola)
                     .Select(u => new
                     {
-                        u.Id,
-                        u.Ime,
-                        u.Priimek,
-                        u.Email,
-                        roleId = u.RolaId,
-                        role = GetRoleName(u.RolaId)
+                        u.id,
+                        u.ime,
+                        u.priimek,
+                        u.email,
+                        roleId = u.rola_id,
+                        role = GetRoleName(u.rola_id)
                     })
                     .ToListAsync();
                 return Ok(users);
@@ -503,11 +437,9 @@ namespace StudentskaSluzba.Controllers
                     .Include(u => u.Rezervacije)
                         .ThenInclude(r => r.GovorilnaUra)
                             .ThenInclude(g => g.Predmet)
-                    .FirstOrDefaultAsync(u => u.Id == id);
-
+                    .FirstOrDefaultAsync(u => u.id == id);
                 if (user == null)
                     return NotFound(new { message = "Uporabnik ne obstaja" });
-
                 return Ok(user);
             }
             catch (Exception ex)
@@ -516,7 +448,7 @@ namespace StudentskaSluzba.Controllers
             }
         }
 
-        // ========== STATISTIKA ==========
+        // STATISTIKA
         [HttpGet("stats")]
         public async Task<IActionResult> GetStats()
         {
@@ -525,16 +457,15 @@ namespace StudentskaSluzba.Controllers
                 var stats = new
                 {
                     totalUsers = await _context.Users.CountAsync(),
-                    totalStudents = await _context.Users.CountAsync(u => u.RolaId == 3),
-                    totalTutors = await _context.Users.CountAsync(u => u.RolaId == 2),
-                    totalProfessors = await _context.Users.CountAsync(u => u.RolaId == 4),
+                    totalStudents = await _context.Users.CountAsync(u => u.rola_id == 3),
+                    totalTutors = await _context.Users.CountAsync(u => u.rola_id == 2),
+                    totalProfessors = await _context.Users.CountAsync(u => u.rola_id == 4),
                     totalSubjects = await _context.Subjects.CountAsync(),
                     totalOfficeHours = await _context.OfficeHours.CountAsync(),
                     totalReservations = await _context.Reservations.CountAsync(),
-                    pendingReservations = await _context.Reservations.CountAsync(r => r.Status == 0),
-                    confirmedReservations = await _context.Reservations.CountAsync(r => r.Status == 1)
+                    pendingReservations = await _context.Reservations.CountAsync(r => r.status == 0),
+                    confirmedReservations = await _context.Reservations.CountAsync(r => r.status == 1)
                 };
-
                 return Ok(stats);
             }
             catch (Exception ex)
@@ -543,39 +474,7 @@ namespace StudentskaSluzba.Controllers
             }
         }
 
-        // ========== STORED PROCEDURE PRIMER ==========
-        [HttpGet("stats-sp")]
-        public async Task<IActionResult> GetStatsFromSP()
-        {
-            try
-            {
-                var stats = new List<dynamic>();
-
-                using (var command = _context.Database.GetDbConnection().CreateCommand())
-                {
-                    command.CommandText = "SELECT * FROM sp_get_dashboard_stats()";
-                    command.CommandType = System.Data.CommandType.Text;
-
-                    await _context.Database.OpenConnectionAsync();
-
-                    using (var reader = await command.ExecuteReaderAsync())
-                    {
-                        while (await reader.ReadAsync())
-                        {
-                            stats.Add(new { name = reader[0].ToString(), value = Convert.ToInt64(reader[1]) });
-                        }
-                    }
-                }
-
-                return Ok(stats);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = $"Napaka pri klicu SP: {ex.Message}" });
-            }
-        }
-
-        // ========== MOJE PRIJAVE ==========
+        // MOJE PRIJAVE
         [HttpGet("my-enrollments/{userId}")]
         public async Task<IActionResult> GetMyEnrollments(int userId)
         {
@@ -586,9 +485,8 @@ namespace StudentskaSluzba.Controllers
                         .ThenInclude(g => g.Uporabnik)
                     .Include(r => r.GovorilnaUra)
                         .ThenInclude(g => g.Predmet)
-                    .Where(r => r.UserId == userId && r.Status != 2)
+                    .Where(r => r.Uporabnik_id == userId && r.status != 2)
                     .ToListAsync();
-
                 var officeHours = reservations.Select(r => r.GovorilnaUra).ToList();
                 return Ok(officeHours);
             }
@@ -598,7 +496,7 @@ namespace StudentskaSluzba.Controllers
             }
         }
 
-        // ========== PRIJAVA NA GOVORILNO URO ==========
+        // PRIJAVA NA GOVORILNO URO (enroll)
         [HttpPost("officehours/{id}/enroll")]
         public async Task<IActionResult> EnrollStudent(int id, [FromBody] int studentId)
         {
@@ -606,34 +504,29 @@ namespace StudentskaSluzba.Controllers
             {
                 var officeHour = await _context.OfficeHours
                     .Include(o => o.Rezervacije)
-                    .FirstOrDefaultAsync(o => o.Id == id);
-
+                    .FirstOrDefaultAsync(o => o.id == id);
                 if (officeHour == null)
                     return NotFound(new { message = "Govorilna ura ne obstaja" });
-
-                if (officeHour.Rezervacije != null && officeHour.Rezervacije.Any(r => r.UserId == studentId && r.Status != 2))
+                if (officeHour.zacetek < DateTime.Now)
+                    return BadRequest(new { message = "Ne moreš se prijaviti na pretekli termin" });
+                if (officeHour.Rezervacije != null && officeHour.Rezervacije.Any(r => r.Uporabnik_id == studentId && r.status != 2))
                     return BadRequest(new { message = "Že ste prijavljeni na to govorilno uro" });
-
-                var confirmedCount = officeHour.Rezervacije?.Count(r => r.Status == 1) ?? 0;
+                var confirmedCount = officeHour.Rezervacije?.Count(r => r.status == 1) ?? 0;
                 if (confirmedCount >= 10)
                     return BadRequest(new { message = "Ni veè prostih mest" });
-
                 var reservation = new Reservation
                 {
-                    UserId = studentId,
-                    OfficeHourId = id,
-                    Status = 1
+                    Uporabnik_id = studentId,
+                    govorilna_ura_id = id,
+                    status = 1  // takoj potrjeno (lahko spremenite na 0, èe želite èakanje)
                 };
-
                 _context.Reservations.Add(reservation);
                 await _context.SaveChangesAsync();
-
                 var updated = await _context.OfficeHours
                     .Include(o => o.Uporabnik)
                     .Include(o => o.Predmet)
                     .Include(o => o.Rezervacije)
-                    .FirstOrDefaultAsync(o => o.Id == id);
-
+                    .FirstOrDefaultAsync(o => o.id == id);
                 return Ok(updated);
             }
             catch (Exception ex)
@@ -642,7 +535,7 @@ namespace StudentskaSluzba.Controllers
             }
         }
 
-        // ========== PRETEKLI TERMINI ==========
+        // PRETEKLI TERMINI
         [HttpGet("officehours/upcoming")]
         public async Task<IActionResult> GetUpcomingOfficeHours()
         {
@@ -652,8 +545,8 @@ namespace StudentskaSluzba.Controllers
                     .Include(o => o.Uporabnik)
                     .Include(o => o.Predmet)
                     .Include(o => o.Rezervacije)
-                    .Where(o => o.Zacetek > DateTime.Now)
-                    .OrderBy(o => o.Zacetek)
+                    .Where(o => o.zacetek > DateTime.Now)
+                    .OrderBy(o => o.zacetek)
                     .ToListAsync();
                 return Ok(officeHours);
             }
@@ -663,27 +556,23 @@ namespace StudentskaSluzba.Controllers
             }
         }
 
-        // ========== PREKLIC PRIJAVE ==========
+        // PREKLIC PRIJAVE
         [HttpPost("officehours/{id}/cancel")]
         public async Task<IActionResult> CancelEnrollment(int id, [FromBody] int studentId)
         {
             try
             {
                 var reservation = await _context.Reservations
-                    .FirstOrDefaultAsync(r => r.OfficeHourId == id && r.UserId == studentId && r.Status == 1);
-
+                    .FirstOrDefaultAsync(r => r.govorilna_ura_id == id && r.Uporabnik_id == studentId && r.status == 1);
                 if (reservation == null)
                     return NotFound(new { message = "Prijava ne obstaja" });
-
-                reservation.Status = 2;
+                reservation.status = 2;
                 await _context.SaveChangesAsync();
-
                 var updated = await _context.OfficeHours
                     .Include(o => o.Uporabnik)
                     .Include(o => o.Predmet)
                     .Include(o => o.Rezervacije)
-                    .FirstOrDefaultAsync(o => o.Id == id);
-
+                    .FirstOrDefaultAsync(o => o.id == id);
                 return Ok(updated);
             }
             catch (Exception ex)
@@ -692,7 +581,136 @@ namespace StudentskaSluzba.Controllers
             }
         }
 
-        // ========== POMOŽNE FUNKCIJE ==========
+        // ========== NOVE AKCIJE ZA TUTORJA IN ADMINA ==========
+
+        // Tutor: pridobi svoje predmete
+        [HttpGet("tutor/{userId}/subjects")]
+        public async Task<IActionResult> GetTutorSubjects(int userId)
+        {
+            var tutorSubjects = await _context.TutorSubjects
+                .Include(ts => ts.Predmet)
+                .Where(ts => ts.Uporabniki_id == userId)
+                .Select(ts => ts.Predmet)
+                .ToListAsync();
+            return Ok(tutorSubjects);
+        }
+
+        // Tutor: dodeli predmet
+        [HttpPost("tutor/{userId}/subjects")]
+        public async Task<IActionResult> AddTutorSubject(int userId, [FromBody] int subjectId)
+        {
+            var existing = await _context.TutorSubjects
+                .FirstOrDefaultAsync(ts => ts.Uporabniki_id == userId && ts.predmet_id == subjectId);
+            if (existing != null)
+                return BadRequest(new { message = "Že pouèujete ta predmet" });
+
+            var tutorSubject = new Tutor { Uporabniki_id = userId, predmet_id = subjectId };
+            _context.TutorSubjects.Add(tutorSubject);
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Predmet dodan" });
+        }
+
+        // Tutor: odstrani predmet
+        [HttpDelete("tutor/{userId}/subjects/{subjectId}")]
+        public async Task<IActionResult> RemoveTutorSubject(int userId, int subjectId)
+        {
+            var tutorSubject = await _context.TutorSubjects
+                .FirstOrDefaultAsync(ts => ts.Uporabniki_id == userId && ts.predmet_id == subjectId);
+            if (tutorSubject == null)
+                return NotFound();
+            _context.TutorSubjects.Remove(tutorSubject);
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Predmet odstranjen" });
+        }
+
+        // Tutor: posodobi urno postavko
+        [HttpPut("tutor/{userId}/hourly-rate")]
+        public async Task<IActionResult> UpdateHourlyRate(int userId, [FromBody] decimal rate)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) return NotFound();
+            user.urna_postavka = rate;
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Urna postavka posodobljena" });
+        }
+
+        // Tutor: pridobi prijave za svojo govorilno uro
+        [HttpGet("officehours/{officeHourId}/reservations")]
+        public async Task<IActionResult> GetReservationsForOfficeHour(int officeHourId)
+        {
+            var reservations = await _context.Reservations
+                .Include(r => r.Uporabnik)
+                .Where(r => r.govorilna_ura_id == officeHourId)
+                .Select(r => new
+                {
+                    r.id,
+                    r.status,
+                    StudentName = r.Uporabnik != null ? $"{r.Uporabnik.ime} {r.Uporabnik.priimek}" : "",
+                    StudentEmail = r.Uporabnik != null ? r.Uporabnik.email : "",
+                    r.komentar_studenta,
+                    r.komentar_ucitelja
+                })
+                .ToListAsync();
+            return Ok(reservations);
+        }
+
+        // Tutor: posodobi komentar in status rezervacije
+        [HttpPut("reservations/{reservationId}")]
+        public async Task<IActionResult> UpdateReservation(int reservationId, [FromBody] UpdateReservationRequest request)
+        {
+            var reservation = await _context.Reservations.FindAsync(reservationId);
+            if (reservation == null) return NotFound();
+            if (request.Status.HasValue)
+                reservation.status = request.Status.Value;
+            if (request.KomentarUcitelja != null)
+                reservation.komentar_ucitelja = request.KomentarUcitelja;
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Rezervacija posodobljena" });
+        }
+
+        // Admin: vsi uporabniki z vlogami
+        [HttpGet("admin/users")]
+        public async Task<IActionResult> GetAllUsersForAdmin()
+        {
+            var users = await _context.Users
+                .Include(u => u.Rola)
+                .Select(u => new
+                {
+                    u.id,
+                    u.ime,
+                    u.priimek,
+                    u.email,
+                    RoleId = u.rola_id,
+                    RoleName = u.Rola != null ? (u.Rola.naziv == 1 ? "admin" : u.Rola.naziv == 2 ? "tutor" : u.Rola.naziv == 3 ? "student" : "professor") : "unknown",
+                    u.urna_postavka
+                })
+                .ToListAsync();
+            return Ok(users);
+        }
+
+        // Admin: posodobi vlogo uporabnika
+        [HttpPut("admin/users/{userId}/role")]
+        public async Task<IActionResult> UpdateUserRole(int userId, [FromBody] int newRoleId)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) return NotFound();
+            user.rola_id = newRoleId;
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Vloga posodobljena" });
+        }
+
+        // Admin: brisanje uporabnika
+        [HttpDelete("admin/users/{userId}")]
+        public async Task<IActionResult> DeleteUser(int userId)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) return NotFound();
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Uporabnik izbrisan" });
+        }
+
+        // POMOŽNA METODA
         private string GetRoleName(int roleId)
         {
             return roleId switch
@@ -706,14 +724,13 @@ namespace StudentskaSluzba.Controllers
         }
     }
 
-    // Model za prijavo
+    // RAZREDI ZA ZAHTEVKE
     public class LoginRequest
     {
         public string Email { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
     }
 
-    // Model za registracijo
     public class RegisterRequest
     {
         public string Ime { get; set; } = string.Empty;
@@ -723,10 +740,15 @@ namespace StudentskaSluzba.Controllers
         public int RolaId { get; set; } = 3;
     }
 
-    // Model za kreiranje rezervacije
     public class CreateReservationRequest
     {
         public int UserId { get; set; }
         public int OfficeHourId { get; set; }
+    }
+
+    public class UpdateReservationRequest
+    {
+        public int? Status { get; set; }
+        public string? KomentarUcitelja { get; set; }
     }
 }
