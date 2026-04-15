@@ -8,14 +8,13 @@ namespace StudentskaSluzba.Models
     public class Rola
     {
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int Id { get; set; }
+        public int id { get; set; }
 
         [Required]
-        public int Naziv { get; set; }
+        public int naziv { get; set; }
 
         [Required]
-        public string Opis { get; set; } = string.Empty;
+        public string opis { get; set; } = string.Empty;
 
         [JsonIgnore]
         public virtual ICollection<User>? Uporabniki { get; set; }

@@ -8,24 +8,25 @@ namespace StudentskaSluzba.Models
     public class Reservation
     {
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int Id { get; set; }
+        public int id { get; set; }
 
         [Required]
-        public int Status { get; set; }
+        public int status { get; set; }
 
         [Required]
-        [Column("Uporabnik_id")]
-        public int UserId { get; set; }
+        public int Uporabnik_id { get; set; }
 
         [Required]
-        [Column("govorilna_ura_id")]
-        public int OfficeHourId { get; set; }
+        public int govorilna_ura_id { get; set; }
 
-        [ForeignKey("UserId")]
+        public string? komentar_studenta { get; set; }
+
+        public string? komentar_ucitelja { get; set; }
+
+        [ForeignKey("Uporabnik_id")]
         public virtual User? Uporabnik { get; set; }
 
-        [ForeignKey("OfficeHourId")]
+        [ForeignKey("govorilna_ura_id")]
         public virtual OfficeHour? GovorilnaUra { get; set; }
     }
 }

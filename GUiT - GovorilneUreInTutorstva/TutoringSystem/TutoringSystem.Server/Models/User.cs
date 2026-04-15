@@ -8,32 +8,28 @@ namespace StudentskaSluzba.Models
     public class User
     {
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int Id { get; set; }
+        public int id { get; set; }
 
         [Required]
-        public string Ime { get; set; } = string.Empty;
+        public string ime { get; set; } = string.Empty;
 
         [Required]
-        public string Priimek { get; set; } = string.Empty;
+        public string priimek { get; set; } = string.Empty;
 
         [Required]
         [EmailAddress]
-        public string Email { get; set; } = string.Empty;
+        public string email { get; set; } = string.Empty;
 
         [Required]
-        [Column("geslo_hash")]
-        public string GesloHash { get; set; } = string.Empty;
+        public string geslo_hash { get; set; } = string.Empty;
 
         [Required]
-        [Column("rola_id")]
-        public int RolaId { get; set; }
+        public int rola_id { get; set; }
 
-        [ForeignKey("RolaId")]
+        [ForeignKey("rola_id")]
         public virtual Rola? Rola { get; set; }
 
-        [NotMapped]
-        public string PolnoIme => $"{Ime} {Priimek}";
+        public decimal? urna_postavka { get; set; }
 
         [JsonIgnore]
         public virtual ICollection<Tutor>? TutorPredmeti { get; set; }

@@ -8,28 +8,27 @@ namespace StudentskaSluzba.Models
     public class OfficeHour
     {
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int Id { get; set; }
+        public int id { get; set; }
 
         [Required]
-        public DateTime Zacetek { get; set; }
+        public DateTime zacetek { get; set; }
 
-        public DateTime? Konec { get; set; }
-
-        [Required]
-        public int Uèilnica { get; set; }
+        public DateTime? konec { get; set; }
 
         [Required]
-        [Column("Uporabnik_id")]
-        public int UserId { get; set; }
+        public string uèilnica { get; set; } = string.Empty;
 
-        [Column("predmet_id")]
-        public int? PredmetId { get; set; }
+        [Required]
+        public int Uporabnik_id { get; set; }
 
-        [ForeignKey("UserId")]
+        public int? predmet_id { get; set; }
+
+        public string? komentar_ucitelja { get; set; }
+
+        [ForeignKey("Uporabnik_id")]
         public virtual User? Uporabnik { get; set; }
 
-        [ForeignKey("PredmetId")]
+        [ForeignKey("predmet_id")]
         public virtual Subject? Predmet { get; set; }
 
         [JsonIgnore]

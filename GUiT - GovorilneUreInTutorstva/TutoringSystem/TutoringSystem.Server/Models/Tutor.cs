@@ -8,21 +8,18 @@ namespace StudentskaSluzba.Models
     public class Tutor
     {
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int Id { get; set; }
+        public int id { get; set; }
 
         [Required]
-        [Column("predmet_id")]
-        public int PredmetId { get; set; }
+        public int predmet_id { get; set; }
 
         [Required]
-        [Column("Uporabniki_id")]
-        public int UserId { get; set; }
+        public int Uporabniki_id { get; set; }
 
-        [ForeignKey("PredmetId")]
+        [ForeignKey("predmet_id")]
         public virtual Subject? Predmet { get; set; }
 
-        [ForeignKey("UserId")]
+        [ForeignKey("Uporabniki_id")]
         public virtual User? Uporabnik { get; set; }
     }
 }

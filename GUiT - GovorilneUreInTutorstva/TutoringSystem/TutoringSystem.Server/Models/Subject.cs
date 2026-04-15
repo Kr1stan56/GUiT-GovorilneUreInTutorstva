@@ -8,13 +8,12 @@ namespace StudentskaSluzba.Models
     public class Subject
     {
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int Id { get; set; }
+        public int id { get; set; }
 
         [Required]
-        public string Naziv { get; set; } = string.Empty;
+        public string naziv { get; set; } = string.Empty;
 
-        public string? Opis { get; set; }
+        public string? opis { get; set; }
 
         [JsonIgnore]
         public virtual ICollection<Tutor>? Tutorji { get; set; }
