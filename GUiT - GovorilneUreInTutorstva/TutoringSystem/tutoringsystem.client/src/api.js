@@ -1,13 +1,11 @@
 const API_BASE_URL = 'http://localhost:5236/api/Tutoring';
 
 export const api = {
-    // Test
     test: async () => {
         const response = await fetch(`${API_BASE_URL}/test`);
         return response.ok;
     },
 
-    // Prijava
     login: async (email, password) => {
         const response = await fetch(`${API_BASE_URL}/login`, {
             method: 'POST',
@@ -21,7 +19,6 @@ export const api = {
         return response.json();
     },
 
-    // Registracija
     register: async (data) => {
         const response = await fetch(`${API_BASE_URL}/register`, {
             method: 'POST',
@@ -35,16 +32,15 @@ export const api = {
         return response.json();
     },
 
-    // Govorilne ure
     getOfficeHours: async () => {
         const response = await fetch(`${API_BASE_URL}/officehours`);
         if (!response.ok) throw new Error('Napaka pri nalaganju govorilnih ur');
         return response.json();
     },
 
-    getMyOfficeHours: async (professorId) => {
-        const response = await fetch(`${API_BASE_URL}/officehours/professor/${professorId}`);
-        if (!response.ok) throw new Error('Napaka pri nalaganju');
+    getOfficeHour: async (id) => {
+        const response = await fetch(`${API_BASE_URL}/officehours/${id}`);
+        if (!response.ok) throw new Error('Napaka pri nalaganju govorilne ure');
         return response.json();
     },
 
@@ -84,7 +80,6 @@ export const api = {
         }
     },
 
-    // Prijave študentov
     enrollStudent: async (officeId, studentId) => {
         const response = await fetch(`${API_BASE_URL}/officehours/${officeId}/enroll`, {
             method: 'POST',
@@ -117,7 +112,6 @@ export const api = {
         return response.json();
     },
 
-    // Tutorji
     getTutors: async () => {
         const response = await fetch(`${API_BASE_URL}/tutors`);
         if (!response.ok) throw new Error('Napaka pri nalaganju tutorjev');
@@ -130,34 +124,84 @@ export const api = {
         return response.json();
     },
 
-    updateTutor: async (id, data) => {
-        const response = await fetch(`${API_BASE_URL}/tutors/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        if (!response.ok) throw new Error('Napaka pri posodabljanju tutorja');
-        return response.json();
-    },
-
-    deleteTutor: async (id) => {
-        const response = await fetch(`${API_BASE_URL}/tutors/${id}`, {
-            method: 'DELETE'
-        });
-        if (!response.ok) throw new Error('Napaka pri brisanju tutorja');
-    },
-
-    // Predmeti
     getSubjects: async () => {
         const response = await fetch(`${API_BASE_URL}/subjects`);
         if (!response.ok) throw new Error('Napaka pri nalaganju predmetov');
         return response.json();
     },
 
-    // Statistika
     getStats: async () => {
         const response = await fetch(`${API_BASE_URL}/stats`);
         if (!response.ok) throw new Error('Napaka pri nalaganju statistike');
         return response.json();
+    },
+
+    // TUTOR SPECIFIČNE
+    getTutorSubjects: async (userId) => {
+        const res = await fetch(`${API_BASE_URL}/tutor/${userId}/subjects`);
+        if (!res.ok) throw new Error('Napaka pri nalaganju predmetov');
+        return res.json();
+    },
+    addTutorSubject: async (userId, subjectId) => {
+        const res = await fetch(`${API_BASE_URL}/tutor/${userId}/subjects`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(subjectId)
+        });
+        if (!res.ok) throw new Error('Napaka pri dodajanju predmeta');
+        return res.json();
+    },
+    removeTutorSubject: async (userId, subjectId) => {
+        const res = await fetch(`${API_BASE_URL}/tutor/${userId}/subjects/${subjectId}`, {
+            method: 'DELETE'
+        });
+        if (!res.ok) throw new Error('Napaka pri odstranjevanju predmeta');
+        return res.json();
+    },
+    updateHourlyRate: async (userId, rate) => {
+        const res = await fetch(`${API_BASE_URL}/tutor/${userId}/hourly-rate`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(rate)
+        });
+        if (!res.ok) throw new Error('Napaka pri posodabljanju urne postavke');
+        return res.json();
+    },
+    getReservationsForOfficeHour: async (officeHourId) => {
+        const res = await fetch(`${API_BASE_URL}/officehours/${officeHourId}/reservations`);
+        if (!res.ok) throw new Error('Napaka pri nalaganju prijav');
+        return res.json();
+    },
+    updateReservation: async (reservationId, data) => {
+        const res = await fetch(`${API_BASE_URL}/reservations/${reservationId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (!res.ok) throw new Error('Napaka pri posodabljanju rezervacije');
+        return res.json();
+    },
+
+    // ADMIN SPECIFIČNE
+    getAllUsers: async () => {
+        const res = await fetch(`${API_BASE_URL}/admin/users`);
+        if (!res.ok) throw new Error('Napaka pri nalaganju uporabnikov');
+        return res.json();
+    },
+    updateUserRole: async (userId, newRoleId) => {
+        const res = await fetch(`${API_BASE_URL}/admin/users/${userId}/role`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newRoleId)
+        });
+        if (!res.ok) throw new Error('Napaka pri posodabljanju vloge');
+        return res.json();
+    },
+    deleteUser: async (userId) => {
+        const res = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
+            method: 'DELETE'
+        });
+        if (!res.ok) throw new Error('Napaka pri brisanju uporabnika');
+        return res.json();
     }
 };
