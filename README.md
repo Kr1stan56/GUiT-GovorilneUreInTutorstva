@@ -47,7 +47,8 @@ Odprite nov terminal v mapi tutoringsystem.client:
 npm install
 npm run dev
 ```
-Aplikacija bo na voljo na: http://localhost:5173
+Aplikacija bo na voljo na:
+``` http://localhost:5173```
 
 🧑‍💻 Uporaba
 Študent: ogled govorilnih ur, prijava / preklic, iskanje in sortiranje, pregled tutorjev.
@@ -58,7 +59,11 @@ Administrator: popoln nadzor nad uporabniki (spreminjanje vlog, brisanje), pregl
 
 🔐 Testni uporabniki (mock način)
 Če želite preizkusiti aplikacijo brez vpliva na bazo, se prijavite kot admin (npr. admin@test.com / password123) in v Debug panelu (ikona hrošča levo na sredini) vklopite "Uporabi Mock podatke". Nato uporabite gumb "Mock prijava" za hitro preklapljanje med vlogami.
-
+pripravljeni profili so :
+```admin
+```
+```
+admin```
 🐛 Možne težave
 Težava	Rešitev
 Backend se ne zažene (dotnet run ne deluje)	Preverite, da imate nameščen .NET 8 SDK.
