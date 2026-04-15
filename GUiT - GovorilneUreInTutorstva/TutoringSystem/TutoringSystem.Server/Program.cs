@@ -7,49 +7,30 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// CORS - dovoli vse za test
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddPolicy("ReactApp", policy =>
     {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
     });
 });
 
 var app = builder.Build();
 
-app.UseSwagger();
-app.UseSwaggerUI();
-app.UseCors("AllowAll");
-app.MapControllers();
-
-// Test baze ob zagonu
-using (var scope = app.Services.CreateScope())
+if (app.Environment.IsDevelopment())
 {
-    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    try
-    {
-        if (await db.Database.CanConnectAsync())
-        {
-            Console.WriteLine("✅ Baza povezana!");
-            var count = await db.Users.CountAsync();
-            Console.WriteLine($"📊 Uporabnikov: {count}");
-        }
-        else
-        {
-            Console.WriteLine("❌ Baza NI povezana!");
-        }
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"❌ Napaka: {ex.Message}");
-    }
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
+
+app.UseHttpsRedirection();
+app.UseCors("ReactApp");
+app.UseAuthorization();
+app.MapControllers();
 
 app.Run();
