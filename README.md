@@ -81,7 +81,7 @@ TutorHub/
     │   ├── App.jsx                 # Glavna komponenta
     │   └── main.jsx
     └── package.json
----	
+
 📝 Opomba o bazi
 Baza podatkov je že vnaprej pripravljena na zunanjem gostitelju (Neon.tech) in je samodejno povezana z aplikacijo. Ob zagonu backenda se aplikacija takoj poveže z obstoječo bazo – ni vam treba nameščati PostgreSQL, ustvarjati tabel ali izvajati migracij. Vse tabele (Uporabniki, govorilne_ure, predmeti …) in osnovni podatki (role, predmeti) so že prisotni.
 
