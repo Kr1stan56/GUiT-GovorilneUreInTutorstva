@@ -114,10 +114,6 @@ function App() {
 
   const showError = (userMessage, technicalError) => {
     console.error('Podrobnosti napake:', technicalError);
-    let podrobnosti = '';
-    if (technicalError.status) podrobnosti += `Status: ${technicalError.status}\n`;
-    if (technicalError.details) podrobnosti += `Podrobnosti: ${JSON.stringify(technicalError.details)}\n`;
-    if (technicalError.message) podrobnosti += `Sporočilo: ${technicalError.message}\n`;
     setSnackbar({ open: true, message: userMessage || "Napaka, obrnite se na administratorja", severity: 'error' });
     addErrorLog('error', userMessage || technicalError.message, technicalError);
   };
@@ -260,9 +256,13 @@ function App() {
         if (office && !myEnrollments.some(e => e.id === officeId)) {
           setMyEnrollments([...myEnrollments, office]);
         }
+        // Posodobi števec prijav v officeHours (mock)
+        const updatedOffice = { ...office, rezervacije: [...(office.rezervacije || []), { id: Date.now() }] };
+        setOfficeHours(officeHours.map(oh => oh.id === officeId ? updatedOffice : oh));
+        setAllOfficeHours(allOfficeHours.map(oh => oh.id === officeId ? updatedOffice : oh));
       } else {
         await api.enrollStudent(officeId, user.id);
-        await loadRealData();
+        await loadRealData(); // osveži vse podatke
         setSnackbar({ open: true, message: 'Uspešno prijavljen!', severity: 'success' });
       }
     } catch (error) {
@@ -278,6 +278,13 @@ function App() {
         addErrorLog('success', `✅ Preklicana prijava na termin ${officeId} (mock)`);
         setSnackbar({ open: true, message: 'Prijava preklicana! (Mock)', severity: 'success' });
         setMyEnrollments(myEnrollments.filter(e => e.id !== officeId));
+        // Posodobi števec v mock podatkih
+        const office = officeHours.find(oh => oh.id === officeId);
+        if (office && office.rezervacije) {
+          const updatedOffice = { ...office, rezervacije: office.rezervacije.filter(r => r.Uporabnik_id !== user.id) };
+          setOfficeHours(officeHours.map(oh => oh.id === officeId ? updatedOffice : oh));
+          setAllOfficeHours(allOfficeHours.map(oh => oh.id === officeId ? updatedOffice : oh));
+        }
       } else {
         await api.cancelEnrollment(officeId, user.id);
         await loadRealData();
@@ -288,7 +295,7 @@ function App() {
     }
   };
 
-  // Ustvari govorilno uro – dokončno popravljeno
+  // Ustvari govorilno uro
   const handleCreateOfficeHour = async () => {
     if (!user) return;
 
@@ -297,19 +304,14 @@ function App() {
       return;
     }
 
-    // Lokalni datum in čas iz inputa (datetime-local)
     let localStartDate = new Date(newOfficeHour.zacetek);
     let now = new Date();
-    
-    // Primerjamo lokalne čase (ne UTC)
     if (localStartDate <= now) {
       setSnackbar({ open: true, message: 'Začetek ure ne more biti v preteklosti! Izberite prihodnji datum in čas.', severity: 'error' });
       return;
     }
 
-    // Pretvorba v UTC (backend pričakuje UTC)
     const startUTC = new Date(localStartDate.getTime() - localStartDate.getTimezoneOffset() * 60000).toISOString();
-    
     let endUTC = null;
     if (newOfficeHour.konec && newOfficeHour.konec.trim() !== '') {
       let localEndDate = new Date(newOfficeHour.konec);
@@ -326,10 +328,7 @@ function App() {
       uporabnik_id: user.id,
       predmet_id: newOfficeHour.predmetId ? parseInt(newOfficeHour.predmetId) : null
     };
-    // Dodamo konec samo, če obstaja
-    if (endUTC) {
-      data.konec = endUTC;
-    }
+    if (endUTC) data.konec = endUTC;
 
     if (useMockData) {
       const newOffice = {
@@ -357,7 +356,7 @@ function App() {
     }
   };
 
-  // Posodobi govorilno uro – popravljeno
+  // Posodobi govorilno uro
   const handleUpdateOfficeHour = async () => {
     if (!user || !editingOffice) return;
 
@@ -368,7 +367,6 @@ function App() {
 
     let localStartDate = new Date(editingOffice.zacetek);
     let now = new Date();
-    // Pri urejanju dovolimo tudi že pretekle ure, ampak opozorimo
     if (localStartDate <= now) {
       if (!window.confirm('Ta ura je v preteklosti. Ali jo vseeno želite posodobiti?')) {
         return;
@@ -376,7 +374,6 @@ function App() {
     }
 
     const startUTC = new Date(localStartDate.getTime() - localStartDate.getTimezoneOffset() * 60000).toISOString();
-    
     let endUTC = null;
     if (editingOffice.konec && editingOffice.konec.trim() !== '') {
       let localEndDate = new Date(editingOffice.konec);
@@ -393,9 +390,7 @@ function App() {
       uporabnik_id: user.id,
       predmet_id: editingOffice.predmet_id ? parseInt(editingOffice.predmet_id) : null
     };
-    if (endUTC) {
-      data.konec = endUTC;
-    }
+    if (endUTC) data.konec = endUTC;
 
     if (useMockData) {
       setOfficeHours(officeHours.map(oh => oh.id === editingOffice.id ? { ...oh, ...data } : oh));
@@ -552,7 +547,7 @@ function App() {
     }
   };
 
-  // Dodajanje predmetov za tutorja
+  // Dodajanje predmetov za tutorja – poenostavljeno z gumbom in promptom
   const handleAddTutorSubject = async (subjectId) => {
     if (useMockData) {
       const newSubject = subjects.find(s => s.id === subjectId);
@@ -669,7 +664,7 @@ function App() {
                       <Typography>👨‍🏫 {oh.uporabnik?.ime} {oh.uporabnik?.priimek}</Typography>
                       <Typography>📅 {new Date(oh.zacetek).toLocaleString()}</Typography>
                       <Typography>📍 Učilnica: {oh.učilnica}</Typography>
-                      {oh.komentarUcitelja && <Typography color="textSecondary">💬 Učitelj: {oh.komentarUcitelja}</Typography>}
+                      {/* Odstranjen komentar profesorja */}
                     </CardContent>
                     <CardActions>
                       <Button size="small" color="error" onClick={() => handleCancelEnrollment(oh.id)}>Prekliči prijavo</Button>
@@ -683,12 +678,14 @@ function App() {
 
         <Paper sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
           <TextField
+            key="search-field"
             size="small"
             placeholder="Išči po predmetu, učitelju, učilnici..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon /></InputAdornment> }}
             sx={{ minWidth: 250 }}
+            autoFocus
           />
           <FormControl size="small" sx={{ minWidth: 150 }}>
             <InputLabel>Sortiraj po</InputLabel>
@@ -717,7 +714,7 @@ function App() {
                   <Typography color="textSecondary">{oh.uporabnik?.ime} {oh.uporabnik?.priimek}</Typography>
                   <Typography>📅 {new Date(oh.zacetek).toLocaleString()}</Typography>
                   <Typography>📍 Učilnica: {oh.učilnica}</Typography>
-                  <Chip label="Prostih: 5" color="success" size="small" sx={{ mt: 1 }} />
+                  <Chip label={`Prostih: ${5 - (oh.rezervacije?.length || 0)}`} color="success" size="small" sx={{ mt: 1 }} />
                 </CardContent>
                 <CardActions>
                   <Button variant="contained" fullWidth onClick={() => handleEnroll(oh.id)}>Prijavi se</Button>
@@ -803,18 +800,22 @@ function App() {
             </Grid>
           ))}
           <Grid item>
-            <FormControl size="small" sx={{ minWidth: 150 }}>
-              <InputLabel>Dodaj predmet</InputLabel>
-              <Select
-                value=""
-                onChange={(e) => handleAddTutorSubject(e.target.value)}
-                label="Dodaj predmet"
-              >
-                {subjects.filter(s => !tutorSubjects.some(ts => ts.id === s.id)).map(s => (
-                  <MenuItem key={s.id} value={s.id}>{s.naziv}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <Button 
+              variant="outlined" 
+              size="small" 
+              startIcon={<AddIcon />}
+              onClick={() => {
+                const subjectList = subjects.map(s => `${s.id}: ${s.naziv}`).join('\n');
+                const input = window.prompt(`Vnesite ID predmeta (številko):\n\n${subjectList}`);
+                if (input && !isNaN(parseInt(input))) {
+                  handleAddTutorSubject(parseInt(input));
+                } else if (input) {
+                  alert('Vnesite veljavno številko ID-ja predmeta.');
+                }
+              }}
+            >
+              Dodaj predmet
+            </Button>
           </Grid>
         </Grid>
 
