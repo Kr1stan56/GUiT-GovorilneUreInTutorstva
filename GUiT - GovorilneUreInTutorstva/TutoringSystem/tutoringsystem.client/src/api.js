@@ -51,8 +51,22 @@ export const api = {
             body: JSON.stringify(data)
         });
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || 'Napaka pri ustvarjanju');
+            let errorMessage = 'Napaka pri ustvarjanju';
+            let details = null;
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.message || errorMessage;
+                details = errorData;
+            } catch (e) {
+                // Če odgovor ni JSON, vzamemo tekst
+                const text = await response.text();
+                errorMessage = text || errorMessage;
+                details = { status: response.status, body: text };
+            }
+            const fullError = new Error(errorMessage);
+            fullError.status = response.status;
+            fullError.details = details;
+            throw fullError;
         }
         return response.json();
     },

@@ -5,14 +5,14 @@ import {
   Avatar, Menu, MenuItem, Alert, Snackbar, CircularProgress, Paper, IconButton,
   Rating, Drawer, Divider, Switch, FormControlLabel, Tab, Tabs, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow, Select, InputLabel, FormControl,
-  Accordion, AccordionSummary, AccordionDetails, InputAdornment, Menu as SelectMenu
+  Accordion, AccordionSummary, AccordionDetails, InputAdornment
 } from '@mui/material';
 import {
   EventNote as EventIcon, Edit as EditIcon, Delete as DeleteIcon,
   Logout as LogoutIcon, Add as AddIcon, BugReport as BugReportIcon, CheckCircle as CheckCircleIcon,
   Error as ErrorIcon, Refresh as RefreshIcon, Warning as WarningIcon, Login as LoginIcon,
   AppRegistration as RegisterIcon, ExpandMore as ExpandMoreIcon, Comment as CommentIcon,
-  SwapHoriz as SwapHorizIcon, Search as SearchIcon, Sort as SortIcon
+  SwapHoriz as SwapHorizIcon, Search as SearchIcon
 } from '@mui/icons-material';
 import { api } from './api';
 
@@ -43,11 +43,11 @@ function App() {
   // Admin specific state
   const [allUsers, setAllUsers] = useState([]);
   const [impersonatedUser, setImpersonatedUser] = useState(null);
-  const [allOfficeHours, setAllOfficeHours] = useState([]); // za admin tabelo
+  const [allOfficeHours, setAllOfficeHours] = useState([]);
 
   // Student filtering/sorting
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState('date'); // 'date', 'subject', 'teacher'
+  const [sortBy, setSortBy] = useState('date');
   const [sortOrder, setSortOrder] = useState('asc');
 
   // Auth state
@@ -91,12 +91,12 @@ function App() {
   const mockOfficeHoursData = [
     {
       id: 1, zacetek: new Date(Date.now() + 86400000).toISOString(), konec: new Date(Date.now() + 90000000).toISOString(),
-      učilnica: "101", Uporabnik_id: 10, uporabnik: { id: 10, ime: "Prof.", priimek: "Novak" }, predmet_id: 1,
+      učilnica: "101", uporabnik_id: 10, uporabnik: { id: 10, ime: "Prof.", priimek: "Novak" }, predmet_id: 1,
       predmet: { id: 1, naziv: "Matematika 1" }, rezervacije: [], komentarUcitelja: ""
     },
     {
       id: 2, zacetek: new Date(Date.now() + 172800000).toISOString(), konec: new Date(Date.now() + 176400000).toISOString(),
-      učilnica: "203", Uporabnik_id: 11, uporabnik: { id: 11, ime: "Prof.", priimek: "Horvat" }, predmet_id: 2,
+      učilnica: "203", uporabnik_id: 11, uporabnik: { id: 11, ime: "Prof.", priimek: "Horvat" }, predmet_id: 2,
       predmet: { id: 2, naziv: "Programiranje 1" }, rezervacije: [], komentarUcitelja: ""
     }
   ];
@@ -283,14 +283,14 @@ function App() {
     }
   };
 
-  // Ustvari govorilno uro (popravljeno)
+  // Ustvari govorilno uro – POPRAVLJENO: uporablja `uporabnik_id` (mala u)
   const handleCreateOfficeHour = async () => {
     if (!user) return;
     const data = {
       zacetek: newOfficeHour.zacetek,
       konec: newOfficeHour.konec || null,
       učilnica: newOfficeHour.učilnica,
-      Uporabnik_id: user.id,        // POZOR: ime lastnosti mora ustrezati backend modelu (Uporabnik_id)
+      uporabnik_id: user.id,
       predmet_id: newOfficeHour.predmetId ? parseInt(newOfficeHour.predmetId) : null
     };
     if (useMockData) {
@@ -315,6 +315,36 @@ function App() {
         setNewOfficeHour({ zacetek: '', konec: '', učilnica: '', predmetId: '' });
       } catch (error) {
         showError('Napaka pri dodajanju govorilne ure', error);
+      }
+    }
+  };
+
+  // Posodobi govorilno uro
+  const handleUpdateOfficeHour = async () => {
+    if (!user || !editingOffice) return;
+    const data = {
+      zacetek: editingOffice.zacetek,
+      konec: editingOffice.konec || null,
+      učilnica: editingOffice.učilnica,
+      uporabnik_id: user.id,
+      predmet_id: editingOffice.predmet_id ? parseInt(editingOffice.predmet_id) : null
+    };
+    if (useMockData) {
+      setOfficeHours(officeHours.map(oh => oh.id === editingOffice.id ? { ...oh, ...data } : oh));
+      setAllOfficeHours(allOfficeHours.map(oh => oh.id === editingOffice.id ? { ...oh, ...data } : oh));
+      addErrorLog('success', `✅ Govorilna ura ${editingOffice.id} posodobljena (mock)`);
+      setSnackbar({ open: true, message: 'Govorilna ura posodobljena!', severity: 'success' });
+      setOpenOfficeDialog(false);
+      setEditingOffice(null);
+    } else {
+      try {
+        await api.updateOfficeHour(editingOffice.id, data);
+        await loadRealData();
+        setSnackbar({ open: true, message: 'Govorilna ura posodobljena!', severity: 'success' });
+        setOpenOfficeDialog(false);
+        setEditingOffice(null);
+      } catch (error) {
+        showError('Napaka pri posodabljanju govorilne ure', error);
       }
     }
   };
@@ -559,7 +589,6 @@ function App() {
     const filteredSortedHours = getFilteredSortedHours();
     return (
       <Box>
-        {/* Moje prijave */}
         {myEnrollments.length > 0 && (
           <>
             <Typography variant="h5" gutterBottom>🎓 Moje prijave</Typography>
@@ -584,7 +613,6 @@ function App() {
           </>
         )}
 
-        {/* Iskanje in sortiranje */}
         <Paper sx={{ p: 2, mb: 3, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
           <TextField
             size="small"
@@ -681,12 +709,10 @@ function App() {
   );
 
   const TutorDashboard = () => {
-    // Pridobi vse prijave na tutorjeve ure
     const tutorOfficeHours = officeHours.filter(oh => oh.uporabnik?.id === user?.id);
     const allReservations = tutorOfficeHours.flatMap(oh => 
       (oh.rezervacije || []).map(r => ({ ...r, officeHour: oh }))
     );
-    // Unikatni študentje
     const uniqueStudents = [...new Map(allReservations.map(r => [r.Uporabnik_id, r])).values()];
 
     return (
@@ -780,112 +806,107 @@ function App() {
     );
   };
 
-const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState(0);
+  const AdminDashboard = () => {
+    const [activeTab, setActiveTab] = useState(0);
+    return (
+      <Box>
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid item xs={12} md={3}>
+            <Card><CardContent><Typography variant="h6">📊 Govorilne ure</Typography><Typography variant="h3">{allOfficeHours.length}</Typography></CardContent></Card>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <Card><CardContent><Typography variant="h6">👨‍🏫 Tutorji</Typography><Typography variant="h3">{tutors.length}</Typography></CardContent></Card>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <Card><CardContent><Typography variant="h6">📚 Predmeti</Typography><Typography variant="h3">{subjects.length}</Typography></CardContent></Card>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <Card><CardContent><Typography variant="h6">👥 Uporabniki</Typography><Typography variant="h3">{allUsers.length}</Typography></CardContent></Card>
+          </Grid>
+        </Grid>
 
-  return (
-    <Box>
-      {/* Statistične kartice ostanejo na vrhu */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={3}>
-          <Card><CardContent><Typography variant="h6">📊 Govorilne ure</Typography><Typography variant="h3">{allOfficeHours.length}</Typography></CardContent></Card>
-        </Grid>
-        <Grid item xs={12} md={3}>
-          <Card><CardContent><Typography variant="h6">👨‍🏫 Tutorji</Typography><Typography variant="h3">{tutors.length}</Typography></CardContent></Card>
-        </Grid>
-        <Grid item xs={12} md={3}>
-          <Card><CardContent><Typography variant="h6">📚 Predmeti</Typography><Typography variant="h3">{subjects.length}</Typography></CardContent></Card>
-        </Grid>
-        <Grid item xs={12} md={3}>
-          <Card><CardContent><Typography variant="h6">👥 Uporabniki</Typography><Typography variant="h3">{allUsers.length}</Typography></CardContent></Card>
-        </Grid>
-      </Grid>
+        <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)} sx={{ mb: 2 }}>
+          <Tab label="📅 Vse govorilne ure" />
+          <Tab label="👥 Uporabniki sistema" />
+        </Tabs>
 
-      {/* Zavihki */}
-      <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)} sx={{ mb: 2 }}>
-        <Tab label="📅 Vse govorilne ure" />
-        <Tab label="👥 Uporabniki sistema" />
-      </Tabs>
-
-      {/* Vsebina prvega zavihka - govorilne ure */}
-      {activeTab === 0 && (
-        <TableContainer component={Paper}>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Predmet</TableCell>
-                <TableCell>Učitelj</TableCell>
-                <TableCell>Začetek</TableCell>
-                <TableCell>Konec</TableCell>
-                <TableCell>Učilnica</TableCell>
-                <TableCell>Št. prijav</TableCell>
-                <TableCell>Akcije</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {allOfficeHours.map(oh => (
-                <TableRow key={oh.id}>
-                  <TableCell>{oh.id}</TableCell>
-                  <TableCell>{oh.predmet?.naziv || '-'}</TableCell>
-                  <TableCell>{oh.uporabnik?.ime} {oh.uporabnik?.priimek}</TableCell>
-                  <TableCell>{new Date(oh.zacetek).toLocaleString()}</TableCell>
-                  <TableCell>{oh.konec ? new Date(oh.konec).toLocaleString() : '-'}</TableCell>
-                  <TableCell>{oh.učilnica}</TableCell>
-                  <TableCell>{oh.rezervacije?.length || 0}</TableCell>
-                  <TableCell>
-                    <IconButton color="primary" onClick={() => { setEditingOffice(oh); setOpenOfficeDialog(true); }}><EditIcon /></IconButton>
-                    <IconButton color="error" onClick={() => handleDeleteOfficeHour(oh.id)}><DeleteIcon /></IconButton>
-                  </TableCell>
+        {activeTab === 0 && (
+          <TableContainer component={Paper}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>ID</TableCell>
+                  <TableCell>Predmet</TableCell>
+                  <TableCell>Učitelj</TableCell>
+                  <TableCell>Začetek</TableCell>
+                  <TableCell>Konec</TableCell>
+                  <TableCell>Učilnica</TableCell>
+                  <TableCell>Št. prijav</TableCell>
+                  <TableCell>Akcije</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
+              </TableHead>
+              <TableBody>
+                {allOfficeHours.map(oh => (
+                  <TableRow key={oh.id}>
+                    <TableCell>{oh.id}</TableCell>
+                    <TableCell>{oh.predmet?.naziv || '-'}</TableCell>
+                    <TableCell>{oh.uporabnik?.ime} {oh.uporabnik?.priimek}</TableCell>
+                    <TableCell>{new Date(oh.zacetek).toLocaleString()}</TableCell>
+                    <TableCell>{oh.konec ? new Date(oh.konec).toLocaleString() : '-'}</TableCell>
+                    <TableCell>{oh.učilnica}</TableCell>
+                    <TableCell>{oh.rezervacije?.length || 0}</TableCell>
+                    <TableCell>
+                      <IconButton color="primary" onClick={() => { setEditingOffice(oh); setOpenOfficeDialog(true); }}><EditIcon /></IconButton>
+                      <IconButton color="error" onClick={() => handleDeleteOfficeHour(oh.id)}><DeleteIcon /></IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
 
-      {/* Vsebina drugega zavihka - uporabniki */}
-      {activeTab === 1 && (
-        <TableContainer component={Paper}>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Ime</TableCell>
-                <TableCell>Email</TableCell>
-                <TableCell>Vloga</TableCell>
-                <TableCell>Urna postavka</TableCell>
-                <TableCell>Akcije</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {allUsers.map(u => (
-                <TableRow key={u.id}>
-                  <TableCell>{u.id}</TableCell>
-                  <TableCell>{u.ime} {u.priimek}</TableCell>
-                  <TableCell>{u.email}</TableCell>
-                  <TableCell>
-                    <Select size="small" value={u.roleId} onChange={(e) => handleUpdateUserRole(u.id, e.target.value)}>
-                      <MenuItem value={1}>Admin</MenuItem>
-                      <MenuItem value={2}>Tutor</MenuItem>
-                      <MenuItem value={3}>Student</MenuItem>
-                      <MenuItem value={4}>Professor</MenuItem>
-                    </Select>
-                  </TableCell>
-                  <TableCell>{u.urnaPostavka ? `${u.urnaPostavka}€` : '-'}</TableCell>
-                  <TableCell>
-                    <IconButton color="primary" onClick={() => handleImpersonate(u.id)}><SwapHorizIcon /></IconButton>
-                    <IconButton color="error" onClick={() => handleDeleteUser(u.id)}><DeleteIcon /></IconButton>
-                  </TableCell>
+        {activeTab === 1 && (
+          <TableContainer component={Paper}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>ID</TableCell>
+                  <TableCell>Ime</TableCell>
+                  <TableCell>Email</TableCell>
+                  <TableCell>Vloga</TableCell>
+                  <TableCell>Urna postavka</TableCell>
+                  <TableCell>Akcije</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
-    </Box>
-  );
-};
+              </TableHead>
+              <TableBody>
+                {allUsers.map(u => (
+                  <TableRow key={u.id}>
+                    <TableCell>{u.id}</TableCell>
+                    <TableCell>{u.ime} {u.priimek}</TableCell>
+                    <TableCell>{u.email}</TableCell>
+                    <TableCell>
+                      <Select size="small" value={u.roleId} onChange={(e) => handleUpdateUserRole(u.id, e.target.value)}>
+                        <MenuItem value={1}>Admin</MenuItem>
+                        <MenuItem value={2}>Tutor</MenuItem>
+                        <MenuItem value={3}>Student</MenuItem>
+                        <MenuItem value={4}>Professor</MenuItem>
+                      </Select>
+                    </TableCell>
+                    <TableCell>{u.urnaPostavka ? `${u.urnaPostavka}€` : '-'}</TableCell>
+                    <TableCell>
+                      <IconButton color="primary" onClick={() => handleImpersonate(u.id)}><SwapHorizIcon /></IconButton>
+                      <IconButton color="error" onClick={() => handleDeleteUser(u.id)}><DeleteIcon /></IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </Box>
+    );
+  };
 
   const renderDashboard = () => {
     const role = getRoleLabel(user?.roleId);
@@ -995,7 +1016,6 @@ const AdminDashboard = () => {
 
   return (
     <Box sx={{ flexGrow: 1 }}>
-      {/* Gumb za debug – samo admin, na levi rob, vertikalno na sredino */}
       {user.roleId === 1 && (
         <IconButton 
           onClick={() => setDebugOpen(true)} 
@@ -1035,7 +1055,6 @@ const AdminDashboard = () => {
         {renderDashboard()}
       </Container>
 
-      {/* Dialog za govorilne ure */}
       <Dialog open={openOfficeDialog} onClose={() => { setOpenOfficeDialog(false); setEditingOffice(null); }} maxWidth="sm" fullWidth>
         <DialogTitle>{editingOffice ? 'Uredi govorilno uro' : 'Dodaj govorilno uro'}</DialogTitle>
         <DialogContent>
@@ -1082,11 +1101,12 @@ const AdminDashboard = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => { setOpenOfficeDialog(false); setEditingOffice(null); }}>Prekliči</Button>
-          <Button variant="contained" onClick={handleCreateOfficeHour}>{editingOffice ? 'Shrani' : 'Dodaj'}</Button>
+          <Button variant="contained" onClick={editingOffice ? handleUpdateOfficeHour : handleCreateOfficeHour}>
+            {editingOffice ? 'Shrani' : 'Dodaj'}
+          </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Dialog za prikazi prijav (tutor/profesor) */}
       <Dialog open={openReservationsDialog} onClose={() => setOpenReservationsDialog(false)} maxWidth="md" fullWidth>
         <DialogTitle>Prijave na govorilno uro: {selectedOfficeHour?.predmet?.naziv}</DialogTitle>
         <DialogContent>
