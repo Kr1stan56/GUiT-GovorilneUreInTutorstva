@@ -30,9 +30,11 @@ Pred zagonom morate imeti nameščeno:
 
 Odprite terminal v mapi `TutoringSystem.Server` in zaženite:
 
-```bash
+
+```
 dotnet restore
 dotnet run
+```
 Strežnik se zažene na: http://localhost:5236
 
 🔗 Povezava do baze je že vnaprej konfigurirana v appsettings.json (zunanji gostitelj). Zato vam ni treba ničesar spreminjati.
@@ -40,9 +42,11 @@ Strežnik se zažene na: http://localhost:5236
 2. Frontend (React)
 Odprite nov terminal v mapi tutoringsystem.client:
 
-bash
+
+```
 npm install
 npm run dev
+```
 Aplikacija bo na voljo na: http://localhost:5173
 
 🧑‍💻 Uporaba
