@@ -40,7 +40,7 @@ Strežnik se zažene na: http://localhost:5236
 🔗 Povezava do baze je že vnaprej konfigurirana v appsettings.json (zunanji gostitelj). Zato vam ni treba ničesar spreminjati.
 
 2. Frontend (React)
-Odprite nov terminal v mapi tutoringsystem.client:
+Odprite nov terminal v mapi `tutoringsystem.client`:
 
 
 ```
