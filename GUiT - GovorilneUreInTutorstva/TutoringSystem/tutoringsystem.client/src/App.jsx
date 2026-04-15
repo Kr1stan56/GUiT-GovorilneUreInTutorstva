@@ -113,8 +113,13 @@ function App() {
   };
 
   const showError = (userMessage, technicalError) => {
+    console.error('Podrobnosti napake:', technicalError);
+    let podrobnosti = '';
+    if (technicalError.status) podrobnosti += `Status: ${technicalError.status}\n`;
+    if (technicalError.details) podrobnosti += `Podrobnosti: ${JSON.stringify(technicalError.details)}\n`;
+    if (technicalError.message) podrobnosti += `Sporočilo: ${technicalError.message}\n`;
     setSnackbar({ open: true, message: userMessage || "Napaka, obrnite se na administratorja", severity: 'error' });
-    addErrorLog('error', technicalError.message || technicalError, technicalError);
+    addErrorLog('error', userMessage || technicalError.message, technicalError);
   };
 
   // Nalaganje podatkov (mock ali real)
@@ -283,47 +288,49 @@ function App() {
     }
   };
 
-  // Ustvari govorilno uro – popravljeno za preprečitev preteklega datuma
+  // Ustvari govorilno uro – dokončno popravljeno
   const handleCreateOfficeHour = async () => {
     if (!user) return;
-    
-    // Preveri, če je začetek prazen
+
     if (!newOfficeHour.zacetek) {
       setSnackbar({ open: true, message: 'Izberite začetek ure!', severity: 'error' });
       return;
     }
-    
-    // Ustvari Date objekt iz lokalnega datetime-local stringa (YYYY-MM-DDThh:mm)
-    // Ta string je v lokalnem času uporabnika.
-    let startDate = new Date(newOfficeHour.zacetek);
+
+    // Lokalni datum in čas iz inputa (datetime-local)
+    let localStartDate = new Date(newOfficeHour.zacetek);
     let now = new Date();
     
-    // Preveri, ali je izbrani datum v preteklosti (primerjaj po minutah)
-    if (startDate <= now) {
+    // Primerjamo lokalne čase (ne UTC)
+    if (localStartDate <= now) {
       setSnackbar({ open: true, message: 'Začetek ure ne more biti v preteklosti! Izberite prihodnji datum in čas.', severity: 'error' });
       return;
     }
+
+    // Pretvorba v UTC (backend pričakuje UTC)
+    const startUTC = new Date(localStartDate.getTime() - localStartDate.getTimezoneOffset() * 60000).toISOString();
     
-    // Pretvori v UTC ISO string (backend pričakuje UTC)
-    const startUTC = startDate.toISOString();
     let endUTC = null;
-    if (newOfficeHour.konec) {
-      let endDate = new Date(newOfficeHour.konec);
-      if (endDate <= startDate) {
+    if (newOfficeHour.konec && newOfficeHour.konec.trim() !== '') {
+      let localEndDate = new Date(newOfficeHour.konec);
+      if (localEndDate <= localStartDate) {
         setSnackbar({ open: true, message: 'Konec ure mora biti po začetku!', severity: 'error' });
         return;
       }
-      endUTC = endDate.toISOString();
+      endUTC = new Date(localEndDate.getTime() - localEndDate.getTimezoneOffset() * 60000).toISOString();
     }
-    
+
     const data = {
       zacetek: startUTC,
-      konec: endUTC,
       učilnica: newOfficeHour.učilnica,
       uporabnik_id: user.id,
       predmet_id: newOfficeHour.predmetId ? parseInt(newOfficeHour.predmetId) : null
     };
-    
+    // Dodamo konec samo, če obstaja
+    if (endUTC) {
+      data.konec = endUTC;
+    }
+
     if (useMockData) {
       const newOffice = {
         ...data, id: officeHours.length + 1,
@@ -350,16 +357,46 @@ function App() {
     }
   };
 
-  // Posodobi govorilno uro
+  // Posodobi govorilno uro – popravljeno
   const handleUpdateOfficeHour = async () => {
     if (!user || !editingOffice) return;
+
+    if (!editingOffice.zacetek) {
+      setSnackbar({ open: true, message: 'Začetek ure ne sme biti prazen!', severity: 'error' });
+      return;
+    }
+
+    let localStartDate = new Date(editingOffice.zacetek);
+    let now = new Date();
+    // Pri urejanju dovolimo tudi že pretekle ure, ampak opozorimo
+    if (localStartDate <= now) {
+      if (!window.confirm('Ta ura je v preteklosti. Ali jo vseeno želite posodobiti?')) {
+        return;
+      }
+    }
+
+    const startUTC = new Date(localStartDate.getTime() - localStartDate.getTimezoneOffset() * 60000).toISOString();
+    
+    let endUTC = null;
+    if (editingOffice.konec && editingOffice.konec.trim() !== '') {
+      let localEndDate = new Date(editingOffice.konec);
+      if (localEndDate <= localStartDate) {
+        setSnackbar({ open: true, message: 'Konec ure mora biti po začetku!', severity: 'error' });
+        return;
+      }
+      endUTC = new Date(localEndDate.getTime() - localEndDate.getTimezoneOffset() * 60000).toISOString();
+    }
+
     const data = {
-      zacetek: editingOffice.zacetek,
-      konec: editingOffice.konec || null,
+      zacetek: startUTC,
       učilnica: editingOffice.učilnica,
       uporabnik_id: user.id,
       predmet_id: editingOffice.predmet_id ? parseInt(editingOffice.predmet_id) : null
     };
+    if (endUTC) {
+      data.konec = endUTC;
+    }
+
     if (useMockData) {
       setOfficeHours(officeHours.map(oh => oh.id === editingOffice.id ? { ...oh, ...data } : oh));
       setAllOfficeHours(allOfficeHours.map(oh => oh.id === editingOffice.id ? { ...oh, ...data } : oh));
