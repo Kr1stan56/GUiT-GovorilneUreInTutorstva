@@ -1,4 +1,4 @@
-markdown
+
 # 📚 TutorHub – Sistem za govorilne ure in tutorstvo
 
 Celovita spletna aplikacija za organizacijo govorilnih ur, iskanje tutorjev in upravljanje terminov.
