@@ -68,7 +68,7 @@ Frontend se ne poveže z backendom	Preverite, da backend teče na http://localho
 CORS napaka v brskalniku	Preverite, da backend v Program.cs vsebuje builder.Services.AddCors(...) z dovoljenim izvorom http://localhost:5173.
 📁 Struktura projekta
 text
-```
+
 TutorHub/
 ├── TutoringSystem.Server/          # Backend (ASP.NET Core)
 │   ├── Controllers/                # API endpointi
@@ -81,7 +81,7 @@ TutorHub/
     │   ├── App.jsx                 # Glavna komponenta
     │   └── main.jsx
     └── package.json
-	```
+---	
 📝 Opomba o bazi
 Baza podatkov je že vnaprej pripravljena na zunanjem gostitelju (Neon.tech) in je samodejno povezana z aplikacijo. Ob zagonu backenda se aplikacija takoj poveže z obstoječo bazo – ni vam treba nameščati PostgreSQL, ustvarjati tabel ali izvajati migracij. Vse tabele (Uporabniki, govorilne_ure, predmeti …) in osnovni podatki (role, predmeti) so že prisotni.
 
