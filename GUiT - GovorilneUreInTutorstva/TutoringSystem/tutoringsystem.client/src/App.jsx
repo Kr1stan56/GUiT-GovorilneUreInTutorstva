@@ -283,16 +283,47 @@ function App() {
     }
   };
 
-  // Ustvari govorilno uro – POPRAVLJENO: uporablja `uporabnik_id` (mala u)
+  // Ustvari govorilno uro – popravljeno za preprečitev preteklega datuma
   const handleCreateOfficeHour = async () => {
     if (!user) return;
+    
+    // Preveri, če je začetek prazen
+    if (!newOfficeHour.zacetek) {
+      setSnackbar({ open: true, message: 'Izberite začetek ure!', severity: 'error' });
+      return;
+    }
+    
+    // Ustvari Date objekt iz lokalnega datetime-local stringa (YYYY-MM-DDThh:mm)
+    // Ta string je v lokalnem času uporabnika.
+    let startDate = new Date(newOfficeHour.zacetek);
+    let now = new Date();
+    
+    // Preveri, ali je izbrani datum v preteklosti (primerjaj po minutah)
+    if (startDate <= now) {
+      setSnackbar({ open: true, message: 'Začetek ure ne more biti v preteklosti! Izberite prihodnji datum in čas.', severity: 'error' });
+      return;
+    }
+    
+    // Pretvori v UTC ISO string (backend pričakuje UTC)
+    const startUTC = startDate.toISOString();
+    let endUTC = null;
+    if (newOfficeHour.konec) {
+      let endDate = new Date(newOfficeHour.konec);
+      if (endDate <= startDate) {
+        setSnackbar({ open: true, message: 'Konec ure mora biti po začetku!', severity: 'error' });
+        return;
+      }
+      endUTC = endDate.toISOString();
+    }
+    
     const data = {
-      zacetek: newOfficeHour.zacetek,
-      konec: newOfficeHour.konec || null,
+      zacetek: startUTC,
+      konec: endUTC,
       učilnica: newOfficeHour.učilnica,
       uporabnik_id: user.id,
       predmet_id: newOfficeHour.predmetId ? parseInt(newOfficeHour.predmetId) : null
     };
+    
     if (useMockData) {
       const newOffice = {
         ...data, id: officeHours.length + 1,
